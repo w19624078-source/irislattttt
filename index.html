@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trisha Arabella T. Alivio | Digital & Traditional Artist</title>
+  <title>Trisha Arabella T. Alivio | Digital Artist &amp; Illustration Designer</title>
   
   <!-- Google Fonts: Orbitron for F1/Racing Display & Inter for Body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,26 +18,71 @@
 </head>
 <body>
 
-  <!-- Custom Cursor Followers (F1 Speed Ring) -->
-  <div class="cursor-dot" id="cursorDot"></div>
-  <div class="cursor-ring" id="cursorRing"><span class="cursor-label" id="cursorLabel">LOOK</span></div>
+  <!-- Tire Trail & Dust Smoke Overlay Canvas -->
+  <canvas id="trailCanvas"></canvas>
+
+  <!-- Custom Mouse Cursor (Max Verstappen #1 Red Bull F1 Car Silhouette with exact Palette Colors) -->
+  <div class="cursor-f1-car" id="cursorCar">
+    <svg viewBox="0 0 40 80" width="40" height="80">
+      <!-- Front Wing -->
+      <polygon points="2,12 38,12 35,4 5,4" fill="#FF0026"/>
+      <rect x="18" y="2" width="4" height="10" fill="#12142D"/>
+      
+      <!-- Front Wheels -->
+      <rect x="0" y="14" width="7" height="15" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+      <rect x="33" y="14" width="7" height="15" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+      <circle cx="3.5" cy="21.5" r="1.5" fill="#FFEA00"/>
+      <circle cx="36.5" cy="21.5" r="1.5" fill="#FFEA00"/>
+
+      <!-- Nose Cone & Cockpit Body -->
+      <path d="M 15,12 L 25,12 L 27,38 L 29,55 L 11,55 L 13,38 Z" fill="#1B2B5A" stroke="#FF0026" stroke-width="1.2"/>
+      
+      <!-- Yellow Nose Tip Accent -->
+      <polygon points="17,12 23,12 22,22 18,22" fill="#FFEA00"/>
+      
+      <!-- Cockpit & Driver Helmet -->
+      <ellipse cx="20" cy="36" rx="4" ry="6" fill="#12142D"/>
+      <circle cx="20" cy="35" r="2.8" fill="#FFEA00"/>
+      
+      <!-- Sidepods -->
+      <path d="M 11,38 L 6,42 L 7,58 L 11,56 Z" fill="#1B2B5A" stroke="#6674A3" stroke-width="1"/>
+      <path d="M 29,38 L 34,42 L 33,58 L 29,56 Z" fill="#1B2B5A" stroke="#6674A3" stroke-width="1"/>
+      <polygon points="6,42 11,38 11,42 6,45" fill="#FF0026"/>
+      <polygon points="34,42 29,38 29,42 34,45" fill="#FF0026"/>
+
+      <!-- Driver Race Number #1 -->
+      <text x="20" y="52" font-family="'Orbitron', sans-serif" font-weight="900" font-size="7" fill="#FFEA00" text-anchor="middle">1</text>
+
+      <!-- Rear Wheels -->
+      <rect x="-1" y="56" width="8" height="18" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+      <rect x="33" y="56" width="8" height="18" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+      <circle cx="3" cy="65" r="1.5" fill="#FFEA00"/>
+      <circle cx="37" cy="65" r="1.5" fill="#FFEA00"/>
+
+      <!-- Rear Wing -->
+      <rect x="4" y="70" width="32" height="7" rx="1" fill="#FF0026"/>
+      <rect x="8" y="65" width="3" height="7" fill="#12142D"/>
+      <rect x="29" y="65" width="3" height="7" fill="#12142D"/>
+      
+      <line x1="5" y1="72" x2="35" y2="72" stroke="#FFEA00" stroke-width="0.8" stroke-dasharray="2,1"/>
+    </svg>
+    <span class="cursor-tooltip" id="cursorTooltip">VIEW</span>
+  </div>
 
   <!-- HEADER / NAVIGATION -->
   <header class="header" id="header">
     <div class="container nav-container">
-      <a href="#home" class="logo" aria-label="Home">
+      <a href="javascript:void(0)" class="logo" onclick="switchPage('main')" aria-label="Home">
         <span class="logo-badge">TA</span>
         <span>TRISHA</span>
       </a>
 
+      <!-- Page Switcher Tabs -->
       <nav>
         <ul class="nav-menu" id="navMenu">
-          <li><a href="#home" class="nav-link active">Home</a></li>
-          <li><a href="#about" class="nav-link">About</a></li>
-          <li><a href="#skills" class="nav-link">Telemetry</a></li>
-          <li><a href="#gallery" class="nav-link">Livery Gallery</a></li>
-          <li><a href="#journal" class="nav-link">Paddock Notes</a></li>
-          <li><a href="#contact" class="nav-link">Pit Radio</a></li>
+          <li><a href="javascript:void(0)" class="nav-link active" id="tab-main" onclick="switchPage('main')">01 // Main Overview</a></li>
+          <li><a href="javascript:void(0)" class="nav-link" id="tab-showcase" onclick="switchPage('showcase')">02 // Showcase &amp; Case Studies</a></li>
+          <li><a href="#contact" class="nav-link" onclick="handleContactClick(event)">Pit Radio</a></li>
         </ul>
       </nav>
 
@@ -45,7 +90,7 @@
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark/Light Mode">
           <i class="fa-solid fa-moon" id="themeIcon"></i>
         </button>
-        <button class="mobile-toggle" id="mobileToggle" aria-label="Open Mobile Navigation Menu">
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Open Navigation Menu">
           <i class="fa-solid fa-bars-staggered"></i>
         </button>
       </div>
@@ -53,393 +98,361 @@
   </header>
 
   <main>
-    <!-- 1. HERO SECTION -->
-    <section class="hero" id="home">
-      <div class="racing-stripe-bg"></div>
-      <div class="container hero-grid">
-        <div class="hero-content reveal">
-          <div class="hero-tagline">
-            <i class="fa-solid fa-flag-checkered"></i> Pole Position Artist
-          </div>
-          <h1 class="hero-title">
-            Hi, I'm <span class="text-stroke">Trisha</span> Arabella T. Alivio
-          </h1>
-          <div class="hero-subtitle">
-            <i class="fa-solid fa-bolt"></i> Digital &amp; Traditional Artist | Illustration Designer
-          </div>
-          <p class="hero-bio">
-            Fueling visual concepts with high-speed creativity, sharp precision lines, and dynamic artistic power. Welcome to my artwork garage.
-          </p>
-          <div class="hero-buttons">
-            <a href="#gallery" class="btn btn-primary">
-              <span>View My Work</span>
-              <i class="fa-solid fa-arrow-right-long"></i>
-            </a>
-            <a href="#contact" class="btn btn-secondary">
-              <span>Contact Me</span>
-              <i class="fa-solid fa-paper-plane"></i>
-            </a>
-          </div>
-        </div>
-
-        <div class="hero-art-wrapper reveal">
-          <div class="hero-art-card">
-            <img 
-              src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80" 
-              alt="Trisha Arabella Featured Artwork" 
-              onerror="this.src='https://via.placeholder.com/800x1000/131822/e10600?text=Featured+Art+Preview'"
-            />
-            <div class="hero-telemetry-badge">
-              <div class="telemetry-item">
-                <span class="telemetry-label">CURRENT STATUS</span>
-                <span class="telemetry-value">READY TO RACE</span>
-              </div>
-              <div class="telemetry-item">
-                <span class="telemetry-label">SPECIALTY</span>
-                <span class="telemetry-value">ILLUSTRATIONS</span>
-              </div>
+    <!-- PAGE 1: MAIN OVERVIEW -->
+    <div id="page-main" class="page-view active">
+      
+      <!-- HERO SECTION -->
+      <section class="hero" id="home">
+        <div class="racing-stripe-bg"></div>
+        <div class="container hero-grid">
+          <div class="hero-content reveal">
+            <div class="hero-tagline">
+              <i class="fa-solid fa-flag-checkered"></i> Pole Position Digital Artist
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 2. ABOUT ME SECTION -->
-    <section id="about">
-      <div class="container">
-        <div class="section-title-wrap reveal">
-          <span class="section-num">01</span>
-          <h2 class="section-title">Driver Profile</h2>
-          <div class="title-stripe"></div>
-        </div>
-
-        <div class="about-grid">
-          <!-- Driver ID Card -->
-          <div class="f1-card driver-card reveal">
-            <div class="driver-header">
-              <div>
-                <h3 style="font-size: 1.1rem; color: var(--text-main);">DRIVE ID CARD</h3>
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-display);">SEASON 2026</span>
-              </div>
-              <div class="driver-number">17</div>
+            <h1 class="hero-title">
+              Hi, I'm <span class="text-stroke">Trisha</span> Arabella T. Alivio
+            </h1>
+            <div class="hero-subtitle">
+              <i class="fa-solid fa-bolt"></i> Digital Artist | Illustration Designer
             </div>
-
-            <div class="driver-meta">
-              <div class="meta-box">
-                <span class="label">Name</span>
-                <span class="val">Trisha Arabella T. Alivio</span>
-              </div>
-              <div class="meta-box">
-                <span class="label">Age</span>
-                <span class="val">17 Years Old</span>
-              </div>
-              <div class="meta-box">
-                <span class="label">Strand / Academic</span>
-                <span class="val">Grade 12 - CSS</span>
-              </div>
-              <div class="meta-box">
-                <span class="label">Base Location</span>
-                <span class="val">Iligan City, Lanao del Norte</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bio Text -->
-          <div class="about-content reveal">
-            <h3 style="margin-bottom: 1rem; font-size: 1.5rem;">Driven by Creative Passion &amp; Tech Precision</h3>
-            <p class="about-text">
-              I am a 17-year-old Grade 12 Computer Systems Servicing (CSS) student based in Iligan City, Lanao del Norte, Philippines. My work sits at the intersection of technical discipline and bold artistic imagination.
+            <p class="hero-bio">
+              Fueling visual concepts with high-speed digital creativity, sharp vector precision, and dynamic illustrative power. Welcome to my artwork garage.
             </p>
-            <p class="about-text">
-              Whether sketching detailed traditional line-work or rendering high-contrast digital illustrations, I approach every project like tuning a high-performance race car—focusing on speed, elegance, and distinct visual impact.
-            </p>
-
-            <div class="about-highlights">
-              <div class="highlight-item">
-                <i class="fa-solid fa-pen-nib"></i>
-                <div>
-                  <strong style="display:block; font-size:0.9rem;">Digital Art</strong>
-                  <span style="font-size:0.75rem; color:var(--text-muted);">Tablet &amp; Vector Work</span>
-                </div>
-              </div>
-              <div class="highlight-item">
-                <i class="fa-solid fa-paint-brush"></i>
-                <div>
-                  <strong style="display:block; font-size:0.9rem;">Traditional</strong>
-                  <span style="font-size:0.75rem; color:var(--text-muted);">Ink &amp; Graphite Media</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. SKILLS SECTION -->
-    <section id="skills" style="background-color: var(--bg-secondary);">
-      <div class="container">
-        <div class="section-title-wrap reveal">
-          <span class="section-num">02</span>
-          <h2 class="section-title">Telemetry &amp; Specs</h2>
-          <div class="title-stripe"></div>
-        </div>
-
-        <div class="skills-grid">
-          <!-- Skill Card 1 -->
-          <div class="f1-card skill-card reveal" data-speed="95">
-            <div class="skill-icon-wrap">
-              <i class="fa-solid fa-palette"></i>
-            </div>
-            <h3 class="skill-title">Digital Drawing</h3>
-            <p class="skill-desc">
-              High-resolution digital illustration, precise tablet control, character design, and vibrant digital painting methods.
-            </p>
-            <div class="speedometer-bar">
-              <div class="speedometer-fill" style="width: 95%;"></div>
-            </div>
-            <div class="skill-stats-footer">
-              <span>OUTPUT SPEED</span>
-              <span style="color:var(--accent-red); font-weight:800;">95% MAX</span>
-            </div>
-          </div>
-
-          <!-- Skill Card 2 -->
-          <div class="f1-card skill-card reveal" data-speed="90">
-            <div class="skill-icon-wrap">
-              <i class="fa-solid fa-pencil"></i>
-            </div>
-            <h3 class="skill-title">Traditional Drawing</h3>
-            <p class="skill-desc">
-              Strong foundational skills in paper sketching, cross-hatching, ink linework, shading, and anatomical proportion studies.
-            </p>
-            <div class="speedometer-bar">
-              <div class="speedometer-fill" style="width: 90%;"></div>
-            </div>
-            <div class="skill-stats-footer">
-              <span>ACCURACY &amp; SHADING</span>
-              <span style="color:var(--accent-red); font-weight:800;">90% MAX</span>
-            </div>
-          </div>
-
-          <!-- Skill Card 3 -->
-          <div class="f1-card skill-card reveal" data-speed="92">
-            <div class="skill-icon-wrap">
-              <i class="fa-solid fa-vector-square"></i>
-            </div>
-            <h3 class="skill-title">Illustration Design</h3>
-            <p class="skill-desc">
-              Editorial layouts, logo design, graphic composition, visual storytelling, and custom promotional graphics.
-            </p>
-            <div class="speedometer-bar">
-              <div class="speedometer-fill" style="width: 92%;"></div>
-            </div>
-            <div class="skill-stats-footer">
-              <span>COMPOSITION BALANCE</span>
-              <span style="color:var(--accent-red); font-weight:800;">92% MAX</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. GALLERY SECTION -->
-    <section id="gallery">
-      <div class="container">
-        <div class="section-title-wrap reveal">
-          <span class="section-num">03</span>
-          <h2 class="section-title">Livery Gallery</h2>
-          <div class="title-stripe"></div>
-        </div>
-
-        <!-- Filter Buttons -->
-        <div class="gallery-filter reveal">
-          <button class="filter-btn active" data-filter="all">All Artwork</button>
-          <button class="filter-btn" data-filter="digital">Digital</button>
-          <button class="filter-btn" data-filter="traditional">Traditional</button>
-          <button class="filter-btn" data-filter="illustration">Illustration</button>
-        </div>
-
-        <!-- Gallery Grid -->
-        <div class="gallery-grid">
-          <!-- Artwork 1 -->
-          <div class="gallery-item reveal" data-category="digital" data-title="Cyber Kinetic Portrait" data-desc="A sleek digital illustration featuring futuristic cybernetic linework and high-contrast red neon accents.">
-            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80" alt="Cyber Kinetic Portrait" onerror="this.src='https://via.placeholder.com/600x450/1a202c/e10600?text=Digital+Art+1'">
-            <div class="gallery-overlay">
-              <span class="gallery-cat-badge">DIGITAL</span>
-              <h4 class="gallery-title">Cyber Kinetic Portrait</h4>
-            </div>
-          </div>
-
-          <!-- Artwork 2 -->
-          <div class="gallery-item reveal" data-category="traditional" data-title="Monochrome Speed Lines" data-desc="Graphite and fine-liner ink study focusing on fast motion blur, directional balance, and deep shadows.">
-            <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=600&q=80" alt="Monochrome Speed Lines" onerror="this.src='https://via.placeholder.com/600x450/1a202c/e10600?text=Traditional+Art+1'">
-            <div class="gallery-overlay">
-              <span class="gallery-cat-badge">TRADITIONAL</span>
-              <h4 class="gallery-title">Monochrome Speed Lines</h4>
-            </div>
-          </div>
-
-          <!-- Artwork 3 -->
-          <div class="gallery-item reveal" data-category="illustration" data-title="Aero Dynamic Brand Poster" data-desc="Vector editorial layout designed for modern racing posters, using bold typography and clean shapes.">
-            <img src="https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=600&q=80" alt="Aero Dynamic Brand Poster" onerror="this.src='https://via.placeholder.com/600x450/1a202c/e10600?text=Illustration+1'">
-            <div class="gallery-overlay">
-              <span class="gallery-cat-badge">ILLUSTRATION</span>
-              <h4 class="gallery-title">Aero Dynamic Brand Poster</h4>
-            </div>
-          </div>
-
-          <!-- Artwork 4 -->
-          <div class="gallery-item reveal" data-category="digital" data-title="Red Apex Digital Paint" data-desc="Dynamic digital artwork highlighting high contrast lighting, bold red textures, and fluid brushwork.">
-            <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=600&q=80" alt="Red Apex Digital Paint" onerror="this.src='https://via.placeholder.com/600x450/1a202c/e10600?text=Digital+Art+2'">
-            <div class="gallery-overlay">
-              <span class="gallery-cat-badge">DIGITAL</span>
-              <h4 class="gallery-title">Red Apex Digital Paint</h4>
-            </div>
-          </div>
-
-          <!-- Artwork 5 -->
-          <div class="gallery-item reveal" data-category="traditional" data-title="Pencil Precision Anatomy" data-desc="Hand-drawn traditional figure drawing focusing on realistic proportions, shading gradients, and detail.">
-            <img src="https://images.unsplash.com/photo-1578926375605-eaf7559b1458?auto=format&fit=crop&w=600&q=80" alt="Pencil Precision Anatomy" onerror="this.src='https://via.placeholder.com/600x450/1a202c/e10600?text=Traditional+Art+2'">
-            <div class="gallery-overlay">
-              <span class="gallery-cat-badge">TRADITIONAL</span>
-              <h4 class="gallery-title">Pencil Precision Anatomy</h4>
-            </div>
-          </div>
-
-          <!-- Artwork 6 -->
-          <div class="gallery-item reveal" data-category="illustration" data-title="Velocity Badge Concepts" data-desc="A series of custom vector badge designs and emblem concepts tailored for visual branding.">
-            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80" alt="Velocity Badge Concepts" onerror="this.src='https://via.placeholder.com/600x450/1a202c/e10600?text=Illustration+2'">
-            <div class="gallery-overlay">
-              <span class="gallery-cat-badge">ILLUSTRATION</span>
-              <h4 class="gallery-title">Velocity Badge Concepts</h4>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. BLOG / JOURNAL TEASER -->
-    <section id="journal" style="background-color: var(--bg-secondary);">
-      <div class="container">
-        <div class="section-title-wrap reveal">
-          <span class="section-num">04</span>
-          <h2 class="section-title">Paddock Notes</h2>
-          <div class="title-stripe"></div>
-        </div>
-
-        <div class="journal-grid">
-          <article class="f1-card journal-card reveal">
-            <div>
-              <span class="journal-date"><i class="fa-regular fa-calendar"></i> OCT 2026</span>
-              <h3 class="journal-title">My Art Process: From Initial Sketch to High-Speed Render</h3>
-              <p class="journal-excerpt">
-                How I structure my workflow starting with quick traditional pencil thumbnails before moving into full digital rendering.
-              </p>
-            </div>
-            <a href="#contact" class="journal-link">
-              <span>READ INSIGHTS</span>
-              <i class="fa-solid fa-chevron-right"></i>
-            </a>
-          </article>
-
-          <article class="f1-card journal-card reveal">
-            <div>
-              <span class="journal-date"><i class="fa-regular fa-calendar"></i> SEP 2026</span>
-              <h3 class="journal-title">Favorite Tools: Hardware &amp; Software in My Garage</h3>
-              <p class="journal-excerpt">
-                A look inside the digital software, custom brushes, and traditional drawing pens I rely on every single day.
-              </p>
-            </div>
-            <a href="#contact" class="journal-link">
-              <span>READ INSIGHTS</span>
-              <i class="fa-solid fa-chevron-right"></i>
-            </a>
-          </article>
-
-          <article class="f1-card journal-card reveal">
-            <div>
-              <span class="journal-date"><i class="fa-regular fa-calendar"></i> AUG 2026</span>
-              <h3 class="journal-title">Finding Inspiration in Motorsport &amp; Modern Design</h3>
-              <p class="journal-excerpt">
-                Exploring how Formula 1 aerodynamics, high-contrast race liveries, and sleek tech geometry shape my artistic style.
-              </p>
-            </div>
-            <a href="#contact" class="journal-link">
-              <span>READ INSIGHTS</span>
-              <i class="fa-solid fa-chevron-right"></i>
-            </a>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. CONTACT SECTION -->
-    <section id="contact">
-      <div class="container">
-        <div class="section-title-wrap reveal">
-          <span class="section-num">05</span>
-          <h2 class="section-title">Pit Radio (Contact)</h2>
-          <div class="title-stripe"></div>
-        </div>
-
-        <div class="contact-grid">
-          <div class="f1-card contact-info-card reveal">
-            <h3 style="margin-bottom: 1rem;">Get In Touch</h3>
-            <p style="color: var(--text-muted); margin-bottom: 2rem;">
-              Have a commission request, creative collaboration, or project inquiry? Radio in and let's build something fast and impressive!
-            </p>
-
-            <div class="contact-method">
-              <div class="contact-icon"><i class="fa-solid fa-envelope"></i></div>
-              <div>
-                <span style="font-family: var(--font-display); font-size: 0.7rem; color: var(--text-muted);">EMAIL RADIO</span>
-                <p style="font-weight: 700;">trisha.alivio.art@example.com</p>
-              </div>
-            </div>
-
-            <div class="contact-method">
-              <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
-              <div>
-                <span style="font-family: var(--font-display); font-size: 0.7rem; color: var(--text-muted);">BASE LOCATION</span>
-                <p style="font-weight: 700;">Iligan City, Lanao del Norte, PH</p>
-              </div>
-            </div>
-
-            <span style="font-family: var(--font-display); font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 2rem;">CONNECT ON SOCIALS</span>
-            <div class="social-links">
-              <a href="#" class="social-btn" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-              <a href="#" class="social-btn" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-              <a href="#" class="social-btn" aria-label="Behance"><i class="fa-brands fa-behance"></i></a>
-            </div>
-          </div>
-
-          <!-- Contact Form -->
-          <div class="f1-card" style="padding: 2.5rem;" id="contactFormWrap">
-            <form id="contactForm" onsubmit="event.preventDefault(); alert('Message sent through Pit Radio! Thank you!');">
-              <div class="form-group">
-                <label for="name" class="form-label">YOUR NAME</label>
-                <input type="text" id="name" class="form-input" placeholder="e.g. Lewis Hamilton" required>
-              </div>
-
-              <div class="form-group">
-                <label for="email" class="form-label">YOUR EMAIL</label>
-                <input type="email" id="email" class="form-input" placeholder="e.g. driver@paddock.com" required>
-              </div>
-
-              <div class="form-group">
-                <label for="message" class="form-label">TRANSMISSION MESSAGE</label>
-                <textarea id="message" rows="5" class="form-textarea" placeholder="Type your commission or inquiry details here..." required></textarea>
-              </div>
-
-              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                <span>TRANSMIT MESSAGE</span>
-                <i class="fa-solid fa-paper-plane"></i>
+            <div class="hero-buttons">
+              <button class="btn btn-primary" onclick="switchPage('showcase')">
+                <span>View My Work (Page 02)</span>
+                <i class="fa-solid fa-arrow-right-long"></i>
               </button>
-            </form>
+              <a href="#contact" class="btn btn-secondary">
+                <span>Contact Me</span>
+                <i class="fa-solid fa-paper-plane"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="hero-art-wrapper reveal">
+            <div class="hero-art-card washed-car-shine" onclick="switchPage('showcase')">
+              <img 
+                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" 
+                alt="Trisha Arabella Featured Digital Artwork" 
+                onerror="this.src='https://via.placeholder.com/800x1000/12142D/FF0026?text=Featured+Digital+Art'"
+              />
+              <div class="hero-telemetry-badge">
+                <div class="telemetry-item">
+                  <span class="telemetry-label">CURRENT STATUS</span>
+                  <span class="telemetry-value">READY TO RACE</span>
+                </div>
+                <div class="telemetry-item">
+                  <span class="telemetry-label">SPECIALTY</span>
+                  <span class="telemetry-value">DIGITAL &amp; POSTER</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <!-- ABOUT ME SECTION -->
+      <section id="about">
+        <div class="container">
+          <div class="section-title-wrap reveal">
+            <span class="section-num">01</span>
+            <h2 class="section-title">Driver Profile</h2>
+            <div class="title-stripe"></div>
+          </div>
+
+          <div class="about-grid">
+            <div class="f1-card driver-card washed-car-shine reveal">
+              <div class="driver-header">
+                <div>
+                  <h3 style="font-size: 1.1rem; color: var(--text-main);">DRIVER ID CARD</h3>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-display);">SEASON 2026</span>
+                </div>
+                <div class="driver-number">17</div>
+              </div>
+
+              <div class="driver-meta">
+                <div class="meta-box">
+                  <span class="label">Name</span>
+                  <span class="val">Trisha Arabella T. Alivio</span>
+                </div>
+                <div class="meta-box">
+                  <span class="label">Age / Gender</span>
+                  <span class="val">17 Y/O, Female</span>
+                </div>
+                <div class="meta-box">
+                  <span class="label">Academic Strand</span>
+                  <span class="val">Grade 12 - CSS Strand</span>
+                </div>
+                <div class="meta-box">
+                  <span class="label">Base Location</span>
+                  <span class="val">Iligan City, Lanao del Norte</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="about-content reveal">
+              <h3 style="margin-bottom: 1rem; font-size: 1.5rem;">Driven by Creative Passion &amp; Tech Precision</h3>
+              <p class="about-text">
+                I am a 17-year-old Grade 12 Computer Systems Servicing (CSS) student based in Iligan City, Lanao del Norte, Philippines. My work sits at the high-speed intersection of technical discipline and bold digital visual design.
+              </p>
+              <p class="about-text">
+                Whether executing pixel-precise digital graphics or designing high-impact editorial posters, I approach every creative project like tuning a championship F1 race car—focusing on speed, visual aerodynamic balance, and striking aesthetics.
+              </p>
+
+              <div class="about-highlights">
+                <div class="highlight-item">
+                  <i class="fa-solid fa-palette"></i>
+                  <div>
+                    <strong style="display:block; font-size:0.9rem;">Digital Drawing</strong>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Tablet &amp; Vector Painting</span>
+                  </div>
+                </div>
+                <div class="highlight-item">
+                  <i class="fa-solid fa-vector-square"></i>
+                  <div>
+                    <strong style="display:block; font-size:0.9rem;">Illustration Design</strong>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Editorial &amp; Poster Layouts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SKILLS SECTION -->
+      <section id="skills" style="background-color: var(--bg-secondary);">
+        <div class="container">
+          <div class="section-title-wrap reveal">
+            <span class="section-num">02</span>
+            <h2 class="section-title">Telemetry &amp; Specs</h2>
+            <div class="title-stripe"></div>
+          </div>
+
+          <div class="skills-grid">
+            <div class="f1-card skill-card washed-car-shine reveal">
+              <div class="skill-icon-wrap">
+                <i class="fa-solid fa-palette"></i>
+              </div>
+              <h3 class="skill-title">Digital Drawing</h3>
+              <p class="skill-desc">
+                High-resolution digital character artwork, precise tablet linework, dynamic lighting, color theory, and digital painting rendering.
+              </p>
+              <div class="speedometer-bar">
+                <div class="speedometer-fill" style="width: 96%;"></div>
+              </div>
+              <div class="skill-stats-footer">
+                <span>DIGITAL OUTPUT SPEED</span>
+                <span style="color:var(--accent-yellow); font-weight:800;">96% MAX</span>
+              </div>
+            </div>
+
+            <div class="f1-card skill-card washed-car-shine reveal">
+              <div class="skill-icon-wrap">
+                <i class="fa-solid fa-vector-square"></i>
+              </div>
+              <h3 class="skill-title">Illustration Design</h3>
+              <p class="skill-desc">
+                Editorial layouts, brand emblem vector graphics, poster visual balance, typography, and promotional design compositions.
+              </p>
+              <div class="speedometer-bar">
+                <div class="speedometer-fill" style="width: 93%;"></div>
+              </div>
+              <div class="skill-stats-footer">
+                <span>AERODYNAMIC BALANCE</span>
+                <span style="color:var(--accent-yellow); font-weight:800;">93% MAX</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT SECTION -->
+      <section id="contact">
+        <div class="container">
+          <div class="section-title-wrap reveal">
+            <span class="section-num">03</span>
+            <h2 class="section-title">Pit Radio (Contact)</h2>
+            <div class="title-stripe"></div>
+          </div>
+
+          <div class="contact-grid">
+            <div class="f1-card contact-info-card washed-car-shine reveal">
+              <h3 style="margin-bottom: 1rem;">Get In Touch</h3>
+              <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                Have a digital artwork commission, poster layout project, or collaboration query? Radio in and let's work together!
+              </p>
+
+              <div class="contact-method">
+                <div class="contact-icon"><i class="fa-solid fa-envelope"></i></div>
+                <div>
+                  <span style="font-family: var(--font-display); font-size: 0.7rem; color: var(--text-muted);">EMAIL RADIO</span>
+                  <p style="font-weight: 700;">trisha.alivio.art@example.com</p>
+                </div>
+              </div>
+
+              <div class="contact-method">
+                <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div>
+                  <span style="font-family: var(--font-display); font-size: 0.7rem; color: var(--text-muted);">BASE LOCATION</span>
+                  <p style="font-weight: 700;">Iligan City, Lanao del Norte, PH</p>
+                </div>
+              </div>
+
+              <span style="font-family: var(--font-display); font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 2rem;">CONNECT ON SOCIALS</span>
+              <div class="social-links">
+                <a href="https://instagram.com" target="_blank" rel="noopener" class="social-btn" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://facebook.com" target="_blank" rel="noopener" class="social-btn" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="https://tiktok.com" target="_blank" rel="noopener" class="social-btn" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+              </div>
+            </div>
+
+            <div class="f1-card washed-car-shine" style="padding: 2.5rem;" id="contactFormWrap">
+              <form id="contactForm" onsubmit="event.preventDefault(); alert('Message sent through Pit Radio! Thank you!');">
+                <div class="form-group">
+                  <label for="name" class="form-label">YOUR NAME</label>
+                  <input type="text" id="name" class="form-input" placeholder="e.g. Max Verstappen" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="email" class="form-label">YOUR EMAIL</label>
+                  <input type="email" id="email" class="form-input" placeholder="e.g. driver@paddock.com" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="message" class="form-label">TRANSMISSION MESSAGE</label>
+                  <textarea id="message" rows="5" class="form-textarea" placeholder="Type your commission or project details here..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                  <span>TRANSMIT MESSAGE</span>
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div> <!-- END PAGE 1 -->
+
+
+    <!-- PAGE 2: SHOWCASE & CASE STUDIES -->
+    <div id="page-showcase" class="page-view">
+      
+      <section style="padding-top: 8rem; padding-bottom: 3rem; background-color: var(--bg-secondary);">
+        <div class="container">
+          <div class="hero-tagline">
+            <i class="fa-solid fa-trophy"></i> Official Gallery &amp; Research
+          </div>
+          <h1 style="font-size: clamp(2.2rem, 4.5vw, 3.8rem); margin-bottom: 1rem;">
+            Showcase <span class="text-stroke">&amp; Case Studies</span>
+          </h1>
+          <p style="color: var(--text-muted); max-width: 650px; font-size: 1.05rem;">
+            Explore curated high-speed visual projects—spanning single digital artwork, illustration design posters, and an in-depth experimental research case study.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div class="container">
+          <div class="section-title-wrap">
+            <span class="section-num">01</span>
+            <h2 class="section-title">Showcase of Work</h2>
+            <div class="title-stripe"></div>
+          </div>
+
+          <div class="showcase-grid">
+            <div class="f1-card showcase-card" onclick="openLightbox('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80', 'Neon Apex Cyber Render', 'A featured digital drawing utilizing high-contrast red lighting, tablet-rendered specular highlights, and fluid character shading.')">
+              <div class="showcase-img-wrap">
+                <span class="showcase-badge">DIGITAL ARTWORK</span>
+                <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=800&q=80" alt="Neon Apex Cyber Render">
+              </div>
+              <div class="showcase-body">
+                <h3 class="showcase-title">Neon Apex Cyber Render</h3>
+                <p class="showcase-desc">
+                  An intense digital drawing piece created using tablet brushwork, emphasizing speed lines, volumetric red lighting, and atmospheric depth.
+                </p>
+                <div style="margin-top: 1rem; font-family: var(--font-display); font-size: 0.75rem; color: var(--accent-red); font-weight: 800;">
+                  CLICK TO EXPAND IN LIGHTBOX <i class="fa-solid fa-expand" style="margin-left: 0.4rem;"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="f1-card showcase-card" onclick="openLightbox('https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=1200&q=80', 'Aero Dynamics Grand Prix Poster', 'Editorial graphic poster design blending custom vector shapes, bold typography, and racing livery aesthetics.')">
+              <div class="showcase-img-wrap">
+                <span class="showcase-badge">POSTER / ILLUSTRATION</span>
+                <img src="https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=800&q=80" alt="Aero Dynamics Grand Prix Poster">
+              </div>
+              <div class="showcase-body">
+                <h3 class="showcase-title">Aero Dynamics Grand Prix Poster</h3>
+                <p class="showcase-desc">
+                  A modern poster illustration combining geometric vector layouts, clean typographic hierarchy, and F1-inspired brand color palettes.
+                </p>
+                <div style="margin-top: 1rem; font-family: var(--font-display); font-size: 0.75rem; color: var(--accent-red); font-weight: 800;">
+                  CLICK TO EXPAND IN LIGHTBOX <i class="fa-solid fa-expand" style="margin-left: 0.4rem;"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="background-color: var(--bg-secondary);">
+        <div class="container">
+          <div class="section-title-wrap">
+            <span class="section-num">02</span>
+            <h2 class="section-title">Case Study &amp; Research</h2>
+            <div class="title-stripe"></div>
+          </div>
+
+          <div class="f1-card case-study-card">
+            <div class="case-study-header">
+              <div>
+                <span class="case-study-tag"><i class="fa-solid fa-flask"></i> EXPERIMENTAL RESEARCH STUDY</span>
+                <h3 class="case-study-title">Optimizing Digital Rendering Speed vs. Hardware Resource Usage in CSS Technical Workstations</h3>
+              </div>
+              <div style="font-family: var(--font-display); font-size: 0.8rem; color: var(--text-muted);">
+                DATE: Q3 2026
+              </div>
+            </div>
+
+            <div class="case-study-grid">
+              <div class="case-study-box">
+                <h4><i class="fa-solid fa-bullseye" style="color:var(--accent-red);"></i> 1. Problem Statement</h4>
+                <p>
+                  As a Grade 12 Computer Systems Servicing (CSS) student and digital illustrator, high-resolution canvas rendering can throttle hardware resources on standard workstations. This study tests how layer optimization and vector caching affect rendering latency.
+                </p>
+              </div>
+
+              <div class="case-study-box">
+                <h4><i class="fa-solid fa-vial" style="color:var(--accent-red);"></i> 2. Experimental Methodology</h4>
+                <p>
+                  Conducted benchmarks on 4K digital canvases comparing standard raster layer stacks against GPU-accelerated vector smart objects across different memory configurations (8GB vs 16GB RAM setups).
+                </p>
+              </div>
+
+              <div class="case-study-box">
+                <h4><i class="fa-solid fa-chart-line" style="color:var(--accent-red);"></i> 3. Key Findings</h4>
+                <p>
+                  Rasterizing heavy adjustment filters into smart memory caches reduced GPU render latency by 38.4% and freed up RAM overhead during complex multi-layer poster composition export.
+                </p>
+              </div>
+
+              <div class="case-study-box">
+                <h4><i class="fa-solid fa-check-double" style="color:var(--accent-red);"></i> 4. Practical Application</h4>
+                <p>
+                  Implemented these technical findings directly into my illustration design pipeline, enabling faster brush strokes, smoother pan/zoom response, and zero-lag 300 DPI print poster exports.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div> <!-- END PAGE 2 -->
+
   </main>
 
   <!-- FOOTER -->
@@ -448,13 +461,13 @@
       <div class="footer-copy">
         &copy; 2026 <strong>Trisha Arabella T. Alivio</strong>. All Rights Reserved. Grade 12 CSS Strand.
       </div>
-      <a href="#home" class="back-to-top" aria-label="Back to Top">
+      <a href="#header" class="back-to-top" aria-label="Back to Top">
         <i class="fa-solid fa-arrow-up"></i>
       </a>
     </div>
   </footer>
 
-  <!-- LIGHTBOX MODAL (PIT STOP PREVIEW) -->
+  <!-- LIGHTBOX MODAL -->
   <div class="lightbox" id="lightbox">
     <div class="lightbox-content">
       <button class="lightbox-close" id="lightboxClose" aria-label="Close Lightbox">
@@ -464,14 +477,13 @@
         <img id="lightboxImg" src="" alt="Artwork Large View">
       </div>
       <div class="lightbox-details">
-        <span class="gallery-cat-badge" id="lightboxCategory" style="align-self: flex-start;">CATEGORY</span>
-        <h3 id="lightboxTitle" style="margin: 0.75rem 0; font-size: 1.5rem;">Artwork Title</h3>
+        <h3 id="lightboxTitle" style="margin-bottom: 0.75rem; font-size: 1.5rem;">Artwork Title</h3>
         <p id="lightboxDesc" style="color: var(--text-muted); font-size: 0.95rem;">Artwork detailed description will appear here.</p>
       </div>
     </div>
   </div>
 
   <!-- External JavaScript -->
-  <script src="scirpt.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
