@@ -4,70 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trisha Arabella T. Alivio | Digital Artist &amp; Illustration Designer</title>
-  
-  <!-- Google Fonts: Orbitron for F1/Racing Display & Inter for Body -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;800;900&display=swap" rel="stylesheet">
-  
-  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- External Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <!-- Tire Trail & Dust Smoke Overlay Canvas -->
+  <!-- F1 RACING BACKGROUND + FIREWORKS (both drawn by script.js).
+       Order matters: race canvas -> scrim -> fireworks, so fireworks sit ABOVE the dark scrim
+       but the whole stage stays BELOW the page content. -->
+  <div class="f1-stage" id="f1Stage" aria-hidden="true">
+    <canvas id="f1Canvas"></canvas>
+    <div class="f1-scrim"></div>
+    <canvas id="fireworksCanvas"></canvas>
+  </div>
+
+  <!-- Tire trail / sparks canvas -->
   <canvas id="trailCanvas"></canvas>
 
-  <!-- Custom Mouse Cursor (Max Verstappen #1 Red Bull F1 Car Silhouette with exact Palette Colors) -->
+  <!-- Car cursor: the tooltip sits OUTSIDE the rotating body so "VIEW" never spins -->
   <div class="cursor-f1-car" id="cursorCar">
-    <svg viewBox="0 0 40 80" width="40" height="80">
-      <!-- Front Wing -->
-      <polygon points="2,12 38,12 35,4 5,4" fill="#FF0026"/>
-      <rect x="18" y="2" width="4" height="10" fill="#12142D"/>
-      
-      <!-- Front Wheels -->
-      <rect x="0" y="14" width="7" height="15" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
-      <rect x="33" y="14" width="7" height="15" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
-      <circle cx="3.5" cy="21.5" r="1.5" fill="#FFEA00"/>
-      <circle cx="36.5" cy="21.5" r="1.5" fill="#FFEA00"/>
-
-      <!-- Nose Cone & Cockpit Body -->
-      <path d="M 15,12 L 25,12 L 27,38 L 29,55 L 11,55 L 13,38 Z" fill="#1B2B5A" stroke="#FF0026" stroke-width="1.2"/>
-      
-      <!-- Yellow Nose Tip Accent -->
-      <polygon points="17,12 23,12 22,22 18,22" fill="#FFEA00"/>
-      
-      <!-- Cockpit & Driver Helmet -->
-      <ellipse cx="20" cy="36" rx="4" ry="6" fill="#12142D"/>
-      <circle cx="20" cy="35" r="2.8" fill="#FFEA00"/>
-      
-      <!-- Sidepods -->
-      <path d="M 11,38 L 6,42 L 7,58 L 11,56 Z" fill="#1B2B5A" stroke="#6674A3" stroke-width="1"/>
-      <path d="M 29,38 L 34,42 L 33,58 L 29,56 Z" fill="#1B2B5A" stroke="#6674A3" stroke-width="1"/>
-      <polygon points="6,42 11,38 11,42 6,45" fill="#FF0026"/>
-      <polygon points="34,42 29,38 29,42 34,45" fill="#FF0026"/>
-
-      <!-- Driver Race Number #1 -->
-      <text x="20" y="52" font-family="'Orbitron', sans-serif" font-weight="900" font-size="7" fill="#FFEA00" text-anchor="middle">1</text>
-
-      <!-- Rear Wheels -->
-      <rect x="-1" y="56" width="8" height="18" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
-      <rect x="33" y="56" width="8" height="18" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
-      <circle cx="3" cy="65" r="1.5" fill="#FFEA00"/>
-      <circle cx="37" cy="65" r="1.5" fill="#FFEA00"/>
-
-      <!-- Rear Wing -->
-      <rect x="4" y="70" width="32" height="7" rx="1" fill="#FF0026"/>
-      <rect x="8" y="65" width="3" height="7" fill="#12142D"/>
-      <rect x="29" y="65" width="3" height="7" fill="#12142D"/>
-      
-      <line x1="5" y1="72" x2="35" y2="72" stroke="#FFEA00" stroke-width="0.8" stroke-dasharray="2,1"/>
-    </svg>
+    <div class="cursor-car-body">
+      <svg viewBox="0 0 40 80" width="40" height="80">
+        <polygon points="2,12 38,12 35,4 5,4" fill="#FF0026"/>
+        <rect x="18" y="2" width="4" height="10" fill="#12142D"/>
+        <rect x="0" y="14" width="7" height="15" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+        <rect x="33" y="14" width="7" height="15" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+        <circle cx="3.5" cy="21.5" r="1.5" fill="#FFEA00"/>
+        <circle cx="36.5" cy="21.5" r="1.5" fill="#FFEA00"/>
+        <path d="M 15,12 L 25,12 L 27,38 L 29,55 L 11,55 L 13,38 Z" fill="#1B2B5A" stroke="#FF0026" stroke-width="1.2"/>
+        <polygon points="17,12 23,12 22,22 18,22" fill="#FFEA00"/>
+        <ellipse cx="20" cy="36" rx="4" ry="6" fill="#12142D"/>
+        <circle cx="20" cy="35" r="2.8" fill="#FFEA00"/>
+        <path d="M 11,38 L 6,42 L 7,58 L 11,56 Z" fill="#1B2B5A" stroke="#6674A3" stroke-width="1"/>
+        <path d="M 29,38 L 34,42 L 33,58 L 29,56 Z" fill="#1B2B5A" stroke="#6674A3" stroke-width="1"/>
+        <polygon points="6,42 11,38 11,42 6,45" fill="#FF0026"/>
+        <polygon points="34,42 29,38 29,42 34,45" fill="#FF0026"/>
+        <text x="20" y="52" font-family="'Orbitron', sans-serif" font-weight="900" font-size="7" fill="#FFEA00" text-anchor="middle">1</text>
+        <rect x="-1" y="56" width="8" height="18" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+        <rect x="33" y="56" width="8" height="18" rx="2" fill="#12142D" stroke="#6674A3" stroke-width="1"/>
+        <circle cx="3" cy="65" r="1.5" fill="#FFEA00"/>
+        <circle cx="37" cy="65" r="1.5" fill="#FFEA00"/>
+        <rect x="4" y="70" width="32" height="7" rx="1" fill="#FF0026"/>
+        <rect x="8" y="65" width="3" height="7" fill="#12142D"/>
+        <rect x="29" y="65" width="3" height="7" fill="#12142D"/>
+        <line x1="5" y1="72" x2="35" y2="72" stroke="#FFEA00" stroke-width="0.8" stroke-dasharray="2,1"/>
+      </svg>
+    </div>
     <span class="cursor-tooltip" id="cursorTooltip">VIEW</span>
   </div>
+
+  <!-- "OVERTAKE!" indicator -->
+  <div class="overtake-banner" id="overtakeBanner" role="status" aria-live="polite" data-no-shine>
+    <span class="ob-title"></span>
+    <span class="ob-sub"></span>
+  </div>
+
+  <!-- Crowd sound toggle (muted by default) -->
+  <button class="sound-toggle" id="soundToggle" aria-pressed="false" aria-label="Unmute crowd sound" data-cursor-label="SOUND">
+    <i class="fa-solid fa-volume-xmark"></i>
+  </button>
 
   <!-- HEADER / NAVIGATION -->
   <header class="header" id="header">
@@ -77,7 +76,6 @@
         <span>TRISHA</span>
       </a>
 
-      <!-- Page Switcher Tabs -->
       <nav>
         <ul class="nav-menu" id="navMenu">
           <li><a href="javascript:void(0)" class="nav-link active" id="tab-main" onclick="switchPage('main')">01 // Main Overview</a></li>
@@ -100,8 +98,8 @@
   <main>
     <!-- PAGE 1: MAIN OVERVIEW -->
     <div id="page-main" class="page-view active">
-      
-      <!-- HERO SECTION -->
+
+      <!-- HERO -->
       <section class="hero" id="home">
         <div class="racing-stripe-bg"></div>
         <div class="container hero-grid">
@@ -109,7 +107,8 @@
             <div class="hero-tagline">
               <i class="fa-solid fa-flag-checkered"></i> Pole Position Digital Artist
             </div>
-            <h1 class="hero-title">
+            <!-- data-tilt="title": floats in 3D, faces the cursor (active) or looks around (idle) -->
+            <h1 class="hero-title" data-tilt="title">
               Hi, I'm <span class="text-stroke">Trisha</span> Arabella T. Alivio
             </h1>
             <div class="hero-subtitle">
@@ -119,11 +118,11 @@
               Fueling visual concepts with high-speed digital creativity, sharp vector precision, and dynamic illustrative power. Welcome to my artwork garage.
             </p>
             <div class="hero-buttons">
-              <button class="btn btn-primary" onclick="switchPage('showcase')">
+              <button class="btn btn-primary" data-tilt="button" onclick="switchPage('showcase')">
                 <span>View My Work (Page 02)</span>
                 <i class="fa-solid fa-arrow-right-long"></i>
               </button>
-              <a href="#contact" class="btn btn-secondary">
+              <a href="#contact" class="btn btn-secondary" data-tilt="button">
                 <span>Contact Me</span>
                 <i class="fa-solid fa-paper-plane"></i>
               </a>
@@ -131,10 +130,10 @@
           </div>
 
           <div class="hero-art-wrapper reveal">
-            <div class="hero-art-card washed-car-shine" onclick="switchPage('showcase')">
-              <img 
-                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" 
-                alt="Trisha Arabella Featured Digital Artwork" 
+            <div class="hero-art-card washed-car-shine" data-tilt="image" onclick="switchPage('showcase')">
+              <img
+                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80"
+                alt="Trisha Arabella Featured Digital Artwork"
                 onerror="this.src='https://via.placeholder.com/800x1000/12142D/FF0026?text=Featured+Digital+Art'"
               />
               <div class="hero-telemetry-badge">
@@ -152,7 +151,7 @@
         </div>
       </section>
 
-      <!-- ABOUT ME SECTION -->
+      <!-- ABOUT -->
       <section id="about">
         <div class="container">
           <div class="section-title-wrap reveal">
@@ -162,7 +161,7 @@
           </div>
 
           <div class="about-grid">
-            <div class="f1-card driver-card washed-car-shine reveal">
+            <div class="f1-card driver-card washed-car-shine reveal" data-tilt="card">
               <div class="driver-header">
                 <div>
                   <h3 style="font-size: 1.1rem; color: var(--text-main);">DRIVER ID CARD</h3>
@@ -201,14 +200,14 @@
               </p>
 
               <div class="about-highlights">
-                <div class="highlight-item">
+                <div class="highlight-item" data-tilt="chip">
                   <i class="fa-solid fa-palette"></i>
                   <div>
                     <strong style="display:block; font-size:0.9rem;">Digital Drawing</strong>
                     <span style="font-size:0.75rem; color:var(--text-muted);">Tablet &amp; Vector Painting</span>
                   </div>
                 </div>
-                <div class="highlight-item">
+                <div class="highlight-item" data-tilt="chip">
                   <i class="fa-solid fa-vector-square"></i>
                   <div>
                     <strong style="display:block; font-size:0.9rem;">Illustration Design</strong>
@@ -221,8 +220,8 @@
         </div>
       </section>
 
-      <!-- SKILLS SECTION -->
-      <section id="skills" style="background-color: var(--bg-secondary);">
+      <!-- SKILLS -->
+      <section id="skills" class="section-alt">
         <div class="container">
           <div class="section-title-wrap reveal">
             <span class="section-num">02</span>
@@ -231,7 +230,7 @@
           </div>
 
           <div class="skills-grid">
-            <div class="f1-card skill-card washed-car-shine reveal">
+            <div class="f1-card skill-card washed-car-shine reveal" data-tilt="card">
               <div class="skill-icon-wrap">
                 <i class="fa-solid fa-palette"></i>
               </div>
@@ -248,7 +247,7 @@
               </div>
             </div>
 
-            <div class="f1-card skill-card washed-car-shine reveal">
+            <div class="f1-card skill-card washed-car-shine reveal" data-tilt="card">
               <div class="skill-icon-wrap">
                 <i class="fa-solid fa-vector-square"></i>
               </div>
@@ -268,7 +267,7 @@
         </div>
       </section>
 
-      <!-- CONTACT SECTION -->
+      <!-- CONTACT -->
       <section id="contact">
         <div class="container">
           <div class="section-title-wrap reveal">
@@ -278,7 +277,7 @@
           </div>
 
           <div class="contact-grid">
-            <div class="f1-card contact-info-card washed-car-shine reveal">
+            <div class="f1-card contact-info-card washed-car-shine reveal" data-tilt="card">
               <h3 style="margin-bottom: 1rem;">Get In Touch</h3>
               <p style="color: var(--text-muted); margin-bottom: 2rem;">
                 Have a digital artwork commission, poster layout project, or collaboration query? Radio in and let's work together!
@@ -302,13 +301,13 @@
 
               <span style="font-family: var(--font-display); font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 2rem;">CONNECT ON SOCIALS</span>
               <div class="social-links">
-                <a href="https://instagram.com" target="_blank" rel="noopener" class="social-btn" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                <a href="https://facebook.com" target="_blank" rel="noopener" class="social-btn" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                <a href="https://tiktok.com" target="_blank" rel="noopener" class="social-btn" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                <a href="https://instagram.com" target="_blank" rel="noopener" class="social-btn" data-tilt="icon" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://facebook.com" target="_blank" rel="noopener" class="social-btn" data-tilt="icon" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="https://tiktok.com" target="_blank" rel="noopener" class="social-btn" data-tilt="icon" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
               </div>
             </div>
 
-            <div class="f1-card washed-car-shine" style="padding: 2.5rem;" id="contactFormWrap">
+            <div class="f1-card washed-car-shine" style="padding: 2.5rem;" id="contactFormWrap" data-tilt="form">
               <form id="contactForm" onsubmit="event.preventDefault(); alert('Message sent through Pit Radio! Thank you!');">
                 <div class="form-group">
                   <label for="name" class="form-label">YOUR NAME</label>
@@ -325,7 +324,7 @@
                   <textarea id="message" rows="5" class="form-textarea" placeholder="Type your commission or project details here..." required></textarea>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                <button type="submit" class="btn btn-primary" data-tilt="button" style="width: 100%; justify-content: center;">
                   <span>TRANSMIT MESSAGE</span>
                   <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -340,8 +339,8 @@
 
     <!-- PAGE 2: SHOWCASE & CASE STUDIES -->
     <div id="page-showcase" class="page-view">
-      
-      <section style="padding-top: 8rem; padding-bottom: 3rem; background-color: var(--bg-secondary);">
+
+      <section class="section-alt" style="padding-top: 8rem; padding-bottom: 3rem;">
         <div class="container">
           <div class="hero-tagline">
             <i class="fa-solid fa-trophy"></i> Official Gallery &amp; Research
@@ -359,12 +358,17 @@
         <div class="container">
           <div class="section-title-wrap">
             <span class="section-num">01</span>
-            <h2 class="section-title">Showcase of Work</h2>
+            <h2 class="section-title" data-tilt="heading">Showcase of Work</h2>
             <div class="title-stripe"></div>
           </div>
 
           <div class="showcase-grid">
-            <div class="f1-card showcase-card" onclick="openLightbox('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80', 'Neon Apex Cyber Render', 'A featured digital drawing utilizing high-contrast red lighting, tablet-rendered specular highlights, and fluid character shading.')">
+            <div class="f1-card showcase-card" data-tilt="card" data-lightbox
+                 data-full="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80"
+                 data-title="Neon Apex Cyber Render"
+                 data-desc="A featured digital drawing utilizing high-contrast red lighting, tablet-rendered specular highlights, and fluid character shading."
+                 data-alt="Neon Apex Cyber Render digital artwork"
+                 role="button" tabindex="0" aria-label="View Neon Apex Cyber Render full size">
               <div class="showcase-img-wrap">
                 <span class="showcase-badge">DIGITAL ARTWORK</span>
                 <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=800&q=80" alt="Neon Apex Cyber Render">
@@ -380,7 +384,12 @@
               </div>
             </div>
 
-            <div class="f1-card showcase-card" onclick="openLightbox('https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=1200&q=80', 'Aero Dynamics Grand Prix Poster', 'Editorial graphic poster design blending custom vector shapes, bold typography, and racing livery aesthetics.')">
+            <div class="f1-card showcase-card" data-tilt="card" data-lightbox
+                 data-full="https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=1200&q=80"
+                 data-title="Aero Dynamics Grand Prix Poster"
+                 data-desc="Editorial graphic poster design blending custom vector shapes, bold typography, and racing livery aesthetics."
+                 data-alt="Aero Dynamics Grand Prix poster illustration"
+                 role="button" tabindex="0" aria-label="View Aero Dynamics Grand Prix Poster full size">
               <div class="showcase-img-wrap">
                 <span class="showcase-badge">POSTER / ILLUSTRATION</span>
                 <img src="https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=800&q=80" alt="Aero Dynamics Grand Prix Poster">
@@ -399,11 +408,11 @@
         </div>
       </section>
 
-      <section style="background-color: var(--bg-secondary);">
+      <section class="section-alt">
         <div class="container">
           <div class="section-title-wrap">
             <span class="section-num">02</span>
-            <h2 class="section-title">Case Study &amp; Research</h2>
+            <h2 class="section-title" data-tilt="heading">Case Study &amp; Research</h2>
             <div class="title-stripe"></div>
           </div>
 
@@ -452,7 +461,6 @@
       </section>
 
     </div> <!-- END PAGE 2 -->
-
   </main>
 
   <!-- FOOTER -->
@@ -467,23 +475,31 @@
     </div>
   </footer>
 
-  <!-- LIGHTBOX MODAL -->
-  <div class="lightbox" id="lightbox">
-    <div class="lightbox-content">
-      <button class="lightbox-close" id="lightboxClose" aria-label="Close Lightbox">
+  <!-- LIGHTBOX (1:1 square viewer) -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" aria-hidden="true">
+    <div class="lightbox-stage">
+      <button class="lightbox-close" id="lightboxClose" aria-label="Close artwork viewer">
         <i class="fa-solid fa-xmark"></i>
       </button>
-      <div class="lightbox-img-wrap">
-        <img id="lightboxImg" src="" alt="Artwork Large View">
-      </div>
-      <div class="lightbox-details">
-        <h3 id="lightboxTitle" style="margin-bottom: 0.75rem; font-size: 1.5rem;">Artwork Title</h3>
-        <p id="lightboxDesc" style="color: var(--text-muted); font-size: 0.95rem;">Artwork detailed description will appear here.</p>
-      </div>
+      <button class="lightbox-nav prev" id="lightboxPrev" aria-label="Previous artwork">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <figure class="lightbox-figure">
+        <div class="lightbox-frame">
+          <img id="lightboxImg" src="" alt="Artwork full view">
+        </div>
+        <figcaption class="lightbox-caption">
+          <h3 id="lightboxTitle">Artwork Title</h3>
+          <p id="lightboxDesc">Artwork description.</p>
+          <span class="lightbox-count" id="lightboxCount"></span>
+        </figcaption>
+      </figure>
+      <button class="lightbox-nav next" id="lightboxNext" aria-label="Next artwork">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
     </div>
   </div>
 
-  <!-- External JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
