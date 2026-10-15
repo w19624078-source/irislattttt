@@ -13,9 +13,9 @@
 </head>
 <body>
 
-  <!-- F1 RACING BACKGROUND + FIREWORKS (both drawn by script.js).
-       Order matters: race canvas -> scrim -> fireworks, so fireworks sit ABOVE the dark scrim
-       but the whole stage stays BELOW the page content. -->
+  <!-- F1 RACING BACKGROUND + FIREWORKS + NIGHT LIGHTING (all drawn by script.js).
+       Order matters: race canvas -> scrim -> overlay canvas, so fireworks, pole glow,
+       light sticks and car lights sit ABOVE the dark scrim but BELOW the page content. -->
   <div class="f1-stage" id="f1Stage" aria-hidden="true">
     <canvas id="f1Canvas"></canvas>
     <div class="f1-scrim"></div>
@@ -419,42 +419,23 @@
           <div class="f1-card case-study-card">
             <div class="case-study-header">
               <div>
-                <span class="case-study-tag"><i class="fa-solid fa-flask"></i> EXPERIMENTAL RESEARCH STUDY</span>
-                <h3 class="case-study-title">Optimizing Digital Rendering Speed vs. Hardware Resource Usage in CSS Technical Workstations</h3>
+                <span class="case-study-tag"><i class="fa-solid fa-flask"></i> QUANTITATIVE EXPERIMENTAL RESEARCH</span>
+                <h3 class="case-study-title">Effect of Blurting Method on Knowledge Acquisition and Recall Performance</h3>
               </div>
               <div style="font-family: var(--font-display); font-size: 0.8rem; color: var(--text-muted);">
                 DATE: Q3 2026
               </div>
             </div>
 
-            <div class="case-study-grid">
-              <div class="case-study-box">
-                <h4><i class="fa-solid fa-bullseye" style="color:var(--accent-red);"></i> 1. Problem Statement</h4>
-                <p>
-                  As a Grade 12 Computer Systems Servicing (CSS) student and digital illustrator, high-resolution canvas rendering can throttle hardware resources on standard workstations. This study tests how layer optimization and vector caching affect rendering latency.
-                </p>
-              </div>
-
-              <div class="case-study-box">
-                <h4><i class="fa-solid fa-vial" style="color:var(--accent-red);"></i> 2. Experimental Methodology</h4>
-                <p>
-                  Conducted benchmarks on 4K digital canvases comparing standard raster layer stacks against GPU-accelerated vector smart objects across different memory configurations (8GB vs 16GB RAM setups).
-                </p>
-              </div>
-
-              <div class="case-study-box">
-                <h4><i class="fa-solid fa-chart-line" style="color:var(--accent-red);"></i> 3. Key Findings</h4>
-                <p>
-                  Rasterizing heavy adjustment filters into smart memory caches reduced GPU render latency by 38.4% and freed up RAM overhead during complex multi-layer poster composition export.
-                </p>
-              </div>
-
-              <div class="case-study-box">
-                <h4><i class="fa-solid fa-check-double" style="color:var(--accent-red);"></i> 4. Practical Application</h4>
-                <p>
-                  Implemented these technical findings directly into my illustration design pipeline, enabling faster brush strokes, smoother pan/zoom response, and zero-lag 300 DPI print poster exports.
-                </p>
-              </div>
+            <!-- Replaces the old 1, 2, 3, 4 boxes: one accessible link to the research file.
+                 Put your PDF at files/blurting-study.pdf (or change the href). -->
+            <div class="case-study-cta">
+              <a href="files/blurting-study.pdf" class="btn btn-primary research-link" data-tilt="button"
+                 target="_blank" rel="noopener" type="application/pdf"
+                 aria-label="Read research paper: Effect of Blurting Method on Knowledge Acquisition and Recall Performance (PDF, opens in a new tab)">
+                <span>Research</span>
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+              </a>
             </div>
           </div>
         </div>

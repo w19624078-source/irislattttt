@@ -75,23 +75,23 @@ window.PORTFOLIO_CONFIG = {
     overtakeMode: 'all',     // 'all' = pass every car ahead | 'one' = pass the car directly ahead
     overtakeBaseMs: 1500,    // overtake duration = base + perCar * carsPassed
     overtakePerCarMs: 700,
-    maxParticles: 160,       // smoke + sparks pool
-    maxParticlesSmall: 60,
+    maxParticles: 320,       // smoke + sparks pool (raised: car sparks are heavier now)
+    maxParticlesSmall: 120,
     crowdStep: 9,
     audio: { volume: 0.55, baseGain: 0.32 },
 
     // Dark mode only
     fireworks: {
-      intervalMs: 12000,     // a volley every 12 s
-      firstDelayMs: 12000,   // wait before the first volley after load / after switching to dark
-      volleyMin: 2,          // fireworks per volley
-      volleyMax: 4,
-      bigCount: [100, 160],  // particles in a big burst
-      smallCount: [25, 45],  // particles in a small burst
-      maxParticles: 700,     // hard cap
-      maxParticlesSmall: 280,
-      // CSS variable names are read from your palette; 'orange' = a 50/50 blend of red and yellow
-      colors: ['--accent-red', 'orange', '--accent-yellow']
+      intervalMs: 6000,      // a volley every 6 s
+      firstDelayMs: 2500,    // wait before the first volley after load / after switching to dark
+      volleyMin: 3,          // fireworks per volley
+      volleyMax: 6,
+      bigCount: [180, 280],  // particles in a big burst
+      smallCount: [50, 90],  // particles in a small burst
+      maxParticles: 1800,    // hard cap
+      maxParticlesSmall: 700,
+      // CSS variable names (--x) are read from your palette; 'orange' = a 50/50 blend of red and yellow; hex works too
+      colors: ['--accent-red', 'orange', '--accent-yellow', '#ff4fa3', '#3ad7ff', '#a37bff', '#ffffff']
     },
 
     // Original stylised cars (no real logos or sponsor marks). Order = starting grid.
@@ -1008,7 +1008,8 @@ window.PORTFOLIO_CONFIG = {
 
 
 /* ==========================================================================
-   F1 BACKGROUND — endless side-view race on a fixed canvas (N cars) + dark-mode fireworks.
+   F1 BACKGROUND — endless side-view race on a fixed canvas (N cars) + dark-mode
+   night lighting (pole glow, crowd light sticks, car lights) + fireworks.
    Click a car that is behind another one to make it overtake; click the
    leader for a victory rev. Light mode = daytime, dark mode = night race.
    Pauses when the tab is hidden. Crowd sound is muted until the user opts in.
@@ -1098,6 +1099,51 @@ window.PORTFOLIO_CONFIG = {
   let fwWasDark = false, fwHadContent = false, fwLive = 0;
   let fwPalette = [[255, 0, 38], [255, 117, 19], [255, 234, 0]];
 
+  /* NIGHT LIGHTING QUEUE (dark mode).
+     Glows and light cones are queued while the scene is drawn, then painted on the overlay canvas
+     (above the dark scrim) with additive blending. In light mode the overlay is hidden, so
+     everything turns off on its own. */
+  const STICK_SHARE = 0.32;                         // share of arm-wavers who hold a light stick
+  const STICKS = [[255, 90, 170], [70, 225, 255], [255, 236, 90], [255, 255, 255], [120, 255, 160]];
+  const lq = [];                                    // flat: x, y, radius, R, G, B, alpha
+  const cones = [];                                 // flat: ax, ay, bx, by, cx, cy, R, G, B, alpha
+  const sprites = {};
+  function glow(x, y, r, c, a) { lq.push(x, y, r, c[0], c[1], c[2], a); }
+  function cone(ax, ay, bx, by, cx, cy, c, a) { cones.push(ax, ay, bx, by, cx, cy, c[0], c[1], c[2], a); }
+  function getSprite(r, g, b) {
+    const key = (r | 0) + ',' + (g | 0) + ',' + (b | 0);
+    let s = sprites[key];
+    if (!s) {
+      s = document.createElement('canvas'); s.width = s.height = 64;
+      const g2 = s.getContext('2d');
+      const gr = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(' + key + ',1)');
+      gr.addColorStop(0.25, 'rgba(' + key + ',0.55)');
+      gr.addColorStop(1, 'rgba(' + key + ',0)');
+      g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64);
+      sprites[key] = s;
+    }
+    return s;
+  }
+  function renderLights() {
+    for (let i = 0; i < cones.length; i += 10) {
+      const col = cones[i + 6] + ',' + cones[i + 7] + ',' + cones[i + 8];
+      const g = fctx.createLinearGradient(cones[i], cones[i + 1], (cones[i + 2] + cones[i + 4]) / 2, (cones[i + 3] + cones[i + 5]) / 2);
+      g.addColorStop(0, 'rgba(' + col + ',' + cones[i + 9].toFixed(3) + ')');
+      g.addColorStop(1, 'rgba(' + col + ',0)');
+      fctx.fillStyle = g;
+      fctx.beginPath();
+      fctx.moveTo(cones[i], cones[i + 1]); fctx.lineTo(cones[i + 2], cones[i + 3]); fctx.lineTo(cones[i + 4], cones[i + 5]);
+      fctx.closePath(); fctx.fill();
+    }
+    for (let i = 0; i < lq.length; i += 7) {
+      const r = lq[i + 2];
+      fctx.globalAlpha = Math.min(1, lq[i + 6]);
+      fctx.drawImage(getSprite(lq[i + 3], lq[i + 4], lq[i + 5]), lq[i] - r, lq[i + 1] - r, r * 2, r * 2);
+    }
+    fctx.globalAlpha = 1;
+  }
+
   /* LAYOUT */
   const slotX = (rank) => (W - carLen * 0.62) - rank * gapPx;
 
@@ -1117,7 +1163,7 @@ window.PORTFOLIO_CONFIG = {
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    if (fwEnabled) {
+    if (fctx) {                                     // overlay canvas also carries the night lighting, so it exists even with reduced motion
       fdpr = Math.min(window.devicePixelRatio || 1, small ? 1 : CFG.maxDpr);
       fwCanvas.width = Math.round(W * fdpr);
       fwCanvas.height = Math.round(H * fdpr);
@@ -1176,6 +1222,16 @@ window.PORTFOLIO_CONFIG = {
         return;
       }
     }
+  }
+
+  /* Car sparks: thrown from the exhaust or a rear wheel while throttling, hovered, or clicked */
+  function carSpark(car, power) {
+    const L = carLen * lerp(1, CFG.nearScale, car.laneBlend);
+    const gy = lerp(groundMain, groundNear, car.laneBlend);
+    const pipe = Math.random() < 0.6;                                // exhaust or rear wheel
+    spawn(1, car.x - L * (pipe ? 0.41 : 0.30) + rand(-3, 3), gy - (pipe ? L * 0.12 : 2),
+          -rand(140, 420) * (0.5 + power), -rand(30, 260) * (0.5 + power * 0.7),
+          rand(0.3, 0.65), rand(1.6, 3.2));
   }
 
   /* CAR SHAPES (unit space: x 0..100 rear->front, y 0 = ground, up = negative) */
@@ -1268,6 +1324,8 @@ window.PORTFOLIO_CONFIG = {
     const bounce = Math.sin(t * (15 + car.idx * 1.7) + car.ph) * (0.35 + 0.25 * Math.min(1, worldSpeed / (W * 0.9))) +
                    car.rev * Math.sin(t * 40) * 0.5;
     const pitch = clamp(-accelS * 0.012, -0.035, 0.035) - car.boost * 0.035;
+    const lit = 1 - mix;                                              // 1 at night, 0 by day
+    const brk = Math.max(brake, clamp(-accelS * 0.9, 0, 1));          // braking zone or hard lift
 
     car.hit.x = car.x - L * 0.5; car.hit.y = gy - L * 0.32; car.hit.w = L; car.hit.h = L * 0.36;
 
@@ -1323,12 +1381,21 @@ window.PORTFOLIO_CONFIG = {
     ctx.fillStyle = '#12142D'; ctx.fillRect(55.4, -22.6, 2.5, 1.9);
     ctx.strokeStyle = '#12142D'; ctx.lineWidth = 1.3; ctx.stroke(SH.halo);
 
-    if (brake > 0.15) {                                             // brake light
-      ctx.fillStyle = 'rgba(255,30,30,' + Math.min(1, brake).toFixed(2) + ')';
+    /* tail light: dim red at night, bright stop light when braking */
+    const tail = Math.max(brk > 0.15 ? brk : 0, 0.55 * lit);
+    if (tail > 0.05) {
+      ctx.fillStyle = 'rgba(255,30,30,' + Math.min(1, tail + 0.15).toFixed(2) + ')';
       ctx.fillRect(12.4, -20, 2.2, 3.4);
-      ctx.fillStyle = 'rgba(255,30,30,' + (brake * 0.25).toFixed(2) + ')';
-      ctx.beginPath(); ctx.arc(11, -18, 5, 0, TAU); ctx.fill();
     }
+    /* indicators blink while overtaking */
+    if (car.ot && Math.sin(t * 16) > 0) {
+      ctx.fillStyle = '#FFB000';
+      ctx.fillRect(13.2, -12.6, 1.8, 2);
+      ctx.fillRect(96.5, -6.6, 2.2, 1.4);
+    }
+    /* headlight lens: glows at night, plain by day */
+    ctx.fillStyle = lit > 0.02 ? 'rgba(255,248,222,' + (0.4 + 0.6 * lit).toFixed(2) + ')' : 'rgba(210,218,240,0.55)';
+    ctx.beginPath(); ctx.ellipse(98.2, -8, 2.4, 1.1, -0.1, 0, TAU); ctx.fill();
 
     ctx.fillStyle = '#0b0d1c'; ctx.fill(SH.frontPlane);
     ctx.fillStyle = car.d.accent; ctx.fill(SH.frontEndplate);
@@ -1336,6 +1403,23 @@ window.PORTFOLIO_CONFIG = {
     drawWheel(20, -11.5, 11.5, car.wheel, car);
     drawWheel(79, -10, 10, car.wheel * 1.12, car);
     ctx.restore();
+
+    /* night lights: cones and glows are queued and painted on the overlay canvas (above the scrim) */
+    if (lit > 0.02) {
+      const oy = gy - bounce * u;
+      const nx = car.x + 49 * u, ny = oy - 8 * u;                     // nose
+      const rx = car.x - 37.6 * u, ry = oy - 18 * u;                  // tail light
+      const fl = 0.96 + 0.04 * Math.sin(t * 30 + car.ph);
+      cone(nx, ny, nx + L, ny - 0.12 * L, nx + L, oy + 0.03 * L, [255, 246, 214], 0.34 * lit * fl);
+      glow(nx, ny, 0.22 * L, [255, 248, 220], 0.8 * lit);
+      glow(nx + 0.55 * L, oy - 0.01 * L, 0.35 * L, [255, 240, 200], 0.16 * lit);
+      glow(rx, ry, (0.07 + 0.18 * brk) * L, [255, 30, 30], Math.min(1, (0.45 + 0.55 * brk) * lit));
+      glow(rx - 0.15 * L, oy, 0.2 * L, [255, 20, 20], 0.2 * brk * lit);
+      if (car.ot && Math.sin(t * 16) > 0) {
+        glow(rx, oy - 0.11 * L, 0.06 * L, [255, 176, 0], 0.9 * lit);
+        glow(nx - 0.02 * L, oy - 0.06 * L, 0.06 * L, [255, 176, 0], 0.9 * lit);
+      }
+    }
 
     /* name tag (screen space) */
     const label = 'P' + (rank + 1) + '  ' + car.d.code + '  #' + car.d.number;
@@ -1421,27 +1505,32 @@ window.PORTFOLIO_CONFIG = {
     }
   }
 
+  /* LIGHT POLES (floodlight towers): lamps are OFF by day and switch ON with dark mode */
   function drawTowers() {
     const sp = 620, off = worldX * 0.14;
     const first = Math.floor(off / sp) - 1;
     const top = H * 0.1, base = standTop + 14;
+    const lit = Math.pow(1 - mix, 1.4);                 // 0 in light mode, fades in with the theme switch
     for (let i = 0; i < Math.ceil(W / sp) + 3; i++) {
       const idx = first + i;
       const x = idx * sp - off + hash(idx, 2) * 140;
-      if (x < -80 || x > W + 80) continue;
+      if (x < -H * 0.35 || x > W + H * 0.35) continue;
+
       ctx.fillStyle = rgb(cur.tower);
       ctx.fillRect(x - 2.5, top, 5, base - top);
       ctx.fillRect(x - 22, top - 6, 44, 12);
-      ctx.fillStyle = 'rgba(255,246,214,' + (0.35 + 0.65 * (1 - mix)).toFixed(2) + ')';
+      ctx.fillStyle = 'rgba(150,158,182,0.55)';          // lamps OFF
       for (let k = 0; k < 4; k++) ctx.fillRect(x - 19 + k * 10, top - 4, 7, 8);
-      if (mix < 0.9) {                                              // floodlight glow
-        ctx.globalCompositeOperation = 'lighter';
-        const lg = ctx.createRadialGradient(x, top, 0, x, top, H * 0.55);
-        lg.addColorStop(0, 'rgba(255,240,200,' + (0.22 * (1 - mix)).toFixed(3) + ')');
-        lg.addColorStop(1, 'rgba(255,240,200,0)');
-        ctx.fillStyle = lg;
-        ctx.fillRect(x - H * 0.55, top - 30, H * 1.1, H * 0.8);
-        ctx.globalCompositeOperation = 'source-over';
+
+      if (lit > 0.02) {                                  // lamps ON
+        const flick = 1 - 0.06 * Math.sin(t * 9 + idx * 1.7) - (hash(Math.floor(t * 3) + idx, idx) > 0.97 ? 0.15 : 0);
+        const I = lit * flick;
+        ctx.fillStyle = 'rgba(255,244,210,' + Math.min(1, 0.3 + 0.7 * I).toFixed(2) + ')';
+        for (let k = 0; k < 4; k++) ctx.fillRect(x - 19 + k * 10, top - 4, 7, 8);
+        glow(x, top, H * 0.17, [255, 222, 150], 0.7 * I);             // bloom
+        glow(x, top, H * 0.05, [255, 248, 225], 0.9 * I);             // hot core
+        cone(x, top + 2, x - H * 0.3, trackTop + H * 0.05, x + H * 0.3, trackTop + H * 0.05, [255, 226, 160], 0.16 * I);
+        glow(x, groundMain, H * 0.25, [255, 214, 140], 0.12 * I);     // pool of light on the road
       }
     }
   }
@@ -1511,6 +1600,46 @@ window.PORTFOLIO_CONFIG = {
       }
     }
     ctx.stroke();
+
+    /* LIGHT STICKS (dark mode): some of the arm-wavers hold a glowing stick that follows their hand.
+       Which people hold one is decided by their stable per-person hash, so it never flickers. */
+    const glowK = 1 - mix;
+    if (glowK > 0.03) {
+      ctx.lineCap = 'round';
+      for (let c = 0; c < CROWD.length; c++) {
+        const arr = buckets[c], n = counts[c];
+        for (let k = 0; k < n; k++) {
+          const h2 = arr[k * 3 + 2];
+          if (h2 < 0.5 || h2 >= 0.94 || (h2 * 997) % 1 > STICK_SHARE) continue;
+          const x = arr[k * 3], y = arr[k * 3 + 1];
+          const side = ((h2 * 53) % 1) < 0.5 ? -1 : 1;
+          const wave = Math.sin(t * (7 + h2 * 5) + h2 * 30) * rowH * 0.18 * cheer;   // same wave as the arm
+          const sy = y - bodyH + rowH * 0.04;
+          const ty = y - bodyH - headR * 2.4;
+          const tx = x + side * (hw + rowH * 0.1) - side * wave;                      // hand position
+          let dx = tx - (x + side * hw), dy = ty - sy;
+          const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+          const ex = tx + dx * rowH * 0.55, ey = ty + dy * rowH * 0.55;               // stick tip
+          const col = STICKS[(((h2 * 131) % 1) * STICKS.length) | 0];
+          const pulse = 0.75 + 0.25 * Math.sin(t * 5 + h2 * 40);
+
+          ctx.strokeStyle = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + (0.85 * glowK * pulse).toFixed(2) + ')';
+          ctx.lineWidth = Math.max(1.4, rowH * 0.09);
+          ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(ex, ey); ctx.stroke();
+          glow(ex, ey, rowH * 1.1, col, 0.38 * glowK * pulse);                        // faint glow
+          glow((tx + ex) / 2, (ty + ey) / 2, rowH * 0.55, col, 0.2 * glowK * pulse);
+          if (!small) {
+            for (let j = 0; j < 2; j++) {                                             // sparkles
+              const tw = Math.sin(t * (6 + j * 3) + h2 * 90 + j * 2);
+              if (tw > 0.35) {
+                const a = t * 1.8 + h2 * 50 + j * 3.1;
+                glow(ex + Math.cos(a) * rowH * 0.5, ey + Math.sin(a) * rowH * 0.5, 3.2, [255, 255, 255], 0.55 * ((tw - 0.35) / 0.65) * glowK);
+              }
+            }
+          }
+        }
+      }
+    }
 
     for (let c = 0; c < CROWD.length; c++) {                        // waving flags
       const col = CROWD[c], arr = buckets[c], n = counts[c];
@@ -1631,9 +1760,14 @@ window.PORTFOLIO_CONFIG = {
         ctx.fillStyle = 'rgba(' + (smokeA[0] | 0) + ',' + (smokeA[1] | 0) + ',' + (smokeA[2] | 0) + ',' + (f * 0.3).toFixed(3) + ')';
         ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, TAU); ctx.fill();
       } else {
-        ctx.strokeStyle = 'rgba(255,' + (150 + 80 * f | 0) + ',0,' + (f * 0.95).toFixed(2) + ')';
-        ctx.lineWidth = p.size * f + 0.3;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03); ctx.stroke();
+        /* sparks: orange halo + hot yellow-white core, clearly visible in both themes */
+        const tx = p.x - p.vx * 0.045, ty = p.y - p.vy * 0.045;
+        ctx.strokeStyle = 'rgba(255,120,20,' + (f * 0.35).toFixed(2) + ')';
+        ctx.lineWidth = p.size * f * 3.2 + 1;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,' + (190 + 60 * f | 0) + ',' + (80 + 120 * f | 0) + ',' + f.toFixed(2) + ')';
+        ctx.lineWidth = p.size * f + 0.6;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(tx, ty); ctx.stroke();
       }
     }
     if (type === 1) ctx.globalCompositeOperation = 'source-over';
@@ -1660,9 +1794,10 @@ window.PORTFOLIO_CONFIG = {
 
   /* ======================================================================
      FIREWORKS (dark mode only)
-     A volley of 2-4 rockets every 12 s: rocket + fading trail -> burst of
-     red / orange / yellow particles (big + small), additive blending.
-     Drawn on its own canvas that sits above the scrim and below the content.
+     A volley of 3-6 rockets every 6 s, staggered so bursts overlap: rocket +
+     fading trail -> burst of coloured particles (big + small, some ring shells),
+     additive blending with a soft halo. Drawn on the overlay canvas that sits
+     above the scrim and below the content.
      ====================================================================== */
   function parseHex(h) {
     const m = /^#?([0-9a-f]{6})$/i.exec((h || '').trim());
@@ -1676,7 +1811,7 @@ window.PORTFOLIO_CONFIG = {
     const yellow = readCssColor('--accent-yellow', [255, 234, 0]);
     fwPalette = FW.colors.map((c) => {
       if (c === 'orange') return [(red[0] + yellow[0]) / 2, (red[1] + yellow[1]) / 2, (red[2] + yellow[2]) / 2];
-      if (c.charAt(0) === '-') return readCssColor(c, [255, 200, 0]);
+      if (c.indexOf('--') === 0) return readCssColor(c, [255, 200, 0]);
       return parseHex(c) || [255, 200, 0];
     });
   }
@@ -1711,25 +1846,26 @@ window.PORTFOLIO_CONFIG = {
     const base = fwPalette[(Math.random() * fwPalette.length) | 0];
     const alt = fwPalette[(Math.random() * fwPalette.length) | 0];
     const n = big ? randInt(FW.bigCount[0], FW.bigCount[1]) : randInt(FW.smallCount[0], FW.smallCount[1]);
-    const vmax = big ? rand(260, 360) : rand(110, 170);
+    const ring = big && Math.random() < 0.35;                       // some big shells burst as a ring
+    const vmax = big ? rand(340, 500) : rand(160, 240);
 
     for (let i = 0; i < n; i++) {
       const p = fwAlloc();
       if (!p) break;
       const a = Math.random() * TAU;
-      const sp = vmax * (0.35 + 0.65 * Math.sqrt(Math.random()));  // filled burst, denser toward the rim
+      const sp = ring ? vmax * rand(0.94, 1) : vmax * (0.35 + 0.65 * Math.sqrt(Math.random()));
       const c = Math.random() < 0.25 ? alt : base;
       p.on = 1; p.x = x; p.y = y;
       p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp;
-      p.life = 0; p.max = big ? rand(1.5, 2.4) : rand(0.9, 1.5);
-      p.size = big ? rand(1.4, 2.6) : rand(1, 1.8);
+      p.life = 0; p.max = big ? rand(1.9, 3.0) : rand(1.2, 1.9);
+      p.size = big ? rand(2, 3.6) : rand(1.4, 2.4);
       p.r = clamp(c[0] + rand(-10, 10), 0, 255);
       p.g = clamp(c[1] + rand(-25, 25), 0, 255);
       p.b = clamp(c[2] + rand(-10, 10), 0, 255);
       p.tw = rand(0, TAU);
       p.drag = big ? 1.5 : 1.8;
     }
-    if (big) flashes.push({ x: x, y: y, life: 0, max: 0.35, r: vmax * 0.5 });   // white-hot flash at the centre
+    if (big) flashes.push({ x: x, y: y, life: 0, max: 0.5, r: vmax * 0.7 });   // white-hot flash at the centre
     Snd.pop(big ? 1 : 0.5);
   }
 
@@ -1737,7 +1873,7 @@ window.PORTFOLIO_CONFIG = {
     const n = randInt(FW.volleyMin, FW.volleyMax);
     for (let i = 0; i < n; i++) {
       const big = i === 0 ? true : i === 1 ? false : Math.random() < 0.5;   // always a mix of big and small
-      pendingLaunches.push({ at: i === 0 ? 0 : rand(0.15, 1.4), big: big });
+      pendingLaunches.push({ at: i === 0 ? 0 : rand(0.1, 2.0), big: big });  // staggered so bursts overlap
     }
     crowdBoost = 1;                                                 // the crowd goes wild
     Snd.cheer(0.7);
@@ -1746,7 +1882,7 @@ window.PORTFOLIO_CONFIG = {
   function fwUpdate(dt) {
     if (!fwEnabled) return;
     const dark = isDark();
-    if (dark && !fwWasDark) fwCountdown = FW.firstDelayMs / 1000;   // entering dark mode: restart the 12 s timer
+    if (dark && !fwWasDark) fwCountdown = FW.firstDelayMs / 1000;   // entering dark mode: restart the timer
     if (!dark && fwWasDark) fwReset();                              // leaving dark mode: clear everything at once
     fwWasDark = dark;
     if (!dark) return;
@@ -1792,17 +1928,19 @@ window.PORTFOLIO_CONFIG = {
     }
   }
 
+  /* Overlay render: night lighting (always, in dark mode) + fireworks */
   function fwRender() {
-    if (!fwEnabled) return;
-    const has = isDark() && (rockets.length > 0 || flashes.length > 0 || fwLive > 0);
-    if (!has) {
+    if (!fctx) return;
+    if (!isDark()) {
       if (fwHadContent) { fctx.clearRect(0, 0, W, H); fwHadContent = false; }
       return;
     }
     fwHadContent = true;
     fctx.clearRect(0, 0, W, H);
-    fctx.globalCompositeOperation = 'lighter';                      // additive: overlapping sparks glow
+    fctx.globalCompositeOperation = 'lighter';                      // additive: overlapping light and sparks glow
     fctx.lineCap = 'round';
+
+    renderLights();                                                 // pole glow, light sticks, car lights
 
     // rocket trails + heads
     for (let i = 0; i < rockets.length; i++) {
@@ -1810,14 +1948,14 @@ window.PORTFOLIO_CONFIG = {
       for (let j = 1; j < n; j++) {
         const f = j / n;
         fctx.strokeStyle = 'rgba(255,190,90,' + (f * 0.85).toFixed(2) + ')';
-        fctx.lineWidth = 0.8 + f * 2.2;
+        fctx.lineWidth = 1 + f * 3;
         fctx.beginPath();
         fctx.moveTo(tr[(j - 1) * 2], tr[(j - 1) * 2 + 1]);
         fctx.lineTo(tr[j * 2], tr[j * 2 + 1]);
         fctx.stroke();
       }
       fctx.fillStyle = 'rgba(255,245,210,0.95)';
-      fctx.beginPath(); fctx.arc(r.x, r.y, 2.4, 0, TAU); fctx.fill();
+      fctx.beginPath(); fctx.arc(r.x, r.y, 3.2, 0, TAU); fctx.fill();
     }
 
     // white-hot centre flash (big bursts)
@@ -1832,18 +1970,23 @@ window.PORTFOLIO_CONFIG = {
       fctx.fillRect(f.x - rad, f.y - rad, rad * 2, rad * 2);
     }
 
-    // burst particles: short streaks that twinkle, shrink and fade
+    // burst particles: longer streaks with a soft halo; they twinkle, shrink and fade
     for (let i = 0; i < fwLimit; i++) {
       const p = fwPool[i];
       if (!p.on) continue;
       const f = 1 - p.life / p.max;
-      const alpha = Math.pow(f, 0.9) * (0.65 + 0.35 * Math.sin(p.life * 22 + p.tw));
-      fctx.strokeStyle = 'rgba(' + (p.r | 0) + ',' + (p.g | 0) + ',' + (p.b | 0) + ',' + alpha.toFixed(2) + ')';
-      fctx.lineWidth = p.size * (0.4 + 0.6 * f);
-      fctx.beginPath();
-      fctx.moveTo(p.x, p.y);
-      fctx.lineTo(p.x - p.vx * 0.028 - 0.01, p.y - p.vy * 0.028);
-      fctx.stroke();
+      const alpha = Math.min(1, Math.pow(f, 0.8) * (0.8 + 0.2 * Math.sin(p.life * 22 + p.tw)) * 1.15);
+      const col = (p.r | 0) + ',' + (p.g | 0) + ',' + (p.b | 0);
+      const w = p.size * (0.5 + 0.5 * f);
+      const tx = p.x - p.vx * 0.05, ty = p.y - p.vy * 0.05;
+      if (!small) {                                                 // soft halo
+        fctx.strokeStyle = 'rgba(' + col + ',' + (alpha * 0.25).toFixed(2) + ')';
+        fctx.lineWidth = w * 3.4;
+        fctx.beginPath(); fctx.moveTo(p.x, p.y); fctx.lineTo(tx, ty); fctx.stroke();
+      }
+      fctx.strokeStyle = 'rgba(' + col + ',' + alpha.toFixed(2) + ')';
+      fctx.lineWidth = w;
+      fctx.beginPath(); fctx.moveTo(p.x, p.y); fctx.lineTo(tx, ty); fctx.stroke();
     }
     fctx.globalCompositeOperation = 'source-over';
   }
@@ -1906,6 +2049,7 @@ window.PORTFOLIO_CONFIG = {
   }
 
   function onCarClick(car) {
+    for (let i = 0; i < 22; i++) carSpark(car, 1);                   // interaction = spark burst (even mid-overtake)
     if (busy) return;                                                // no spam while an overtake runs
     const rank = order.indexOf(car);
     if (rank === 0) {
@@ -2131,12 +2275,11 @@ window.PORTFOLIO_CONFIG = {
         car.smokeAcc -= 1;
         spawn(0, car.x - L * 0.3 + rand(-6, 6), gy - 3, rand(-40, 10), rand(-30, -8), rand(0.8, 1.4), rand(3, 6));
       }
-      const sRate = car.boost > 0.2 ? 40 * car.boost : car.rev > 0.2 ? 30 * car.rev : 0;
-      car.sparkAcc += sRate * dt;
-      while (car.sparkAcc >= 1) {
-        car.sparkAcc -= 1;
-        spawn(1, car.x - L * 0.15 + rand(-L * 0.2, L * 0.2), gy - 2, rand(-260, -60), rand(-220, -60), rand(0.25, 0.5), rand(1, 2));
-      }
+
+      /* sparks: while throttling (boost / rev / acceleration) OR while the car is hovered */
+      const thr = Math.max(car.boost, car.rev, clamp(accelS * 2.5, 0, 1), hoverCar === car ? 0.55 : 0);
+      car.sparkAcc += (thr > 0.12 ? 18 + 70 * thr : 0) * dt;
+      while (car.sparkAcc >= 1) { car.sparkAcc -= 1; carSpark(car, thr); }
     }
 
     for (let i = 0; i < pLimit; i++) {
@@ -2172,6 +2315,8 @@ window.PORTFOLIO_CONFIG = {
   }
 
   function render() {
+    lq.length = 0; cones.length = 0;                                 // reset the lighting queue for this frame
+
     const shakeAmt = reduce ? 0 : Math.min(3, CFG.shake * (boostMax + Math.max(0, accelS) * 0.15 + revMax * 0.5));
     ctx.save();
     if (shakeAmt > 0.05) ctx.translate((Math.random() - 0.5) * 2 * shakeAmt, (Math.random() - 0.5) * 2 * shakeAmt);
@@ -2195,7 +2340,7 @@ window.PORTFOLIO_CONFIG = {
     drawStreaks();
     ctx.restore();
 
-    fwRender();                                                      // separate canvas, unaffected by camera shake
+    fwRender();                                                      // overlay canvas, unaffected by camera shake
   }
 
   /* LOOP (pauses when the tab is hidden) */
