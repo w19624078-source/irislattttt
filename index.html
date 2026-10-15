@@ -15,7 +15,8 @@
 
   <!-- F1 RACING BACKGROUND + FIREWORKS + NIGHT LIGHTING (all drawn by script.js).
        Order matters: race canvas -> scrim -> overlay canvas, so fireworks, pole glow,
-       light sticks and car lights sit ABOVE the dark scrim but BELOW the page content. -->
+       light sticks and car lights sit ABOVE the dark scrim but BELOW the page content.
+       Fireworks are cut out behind the skyline, light poles and stands inside script.js. -->
   <div class="f1-stage" id="f1Stage" aria-hidden="true">
     <canvas id="f1Canvas"></canvas>
     <div class="f1-scrim"></div>
@@ -141,9 +142,13 @@
                   <span class="telemetry-label">CURRENT STATUS</span>
                   <span class="telemetry-value">READY TO RACE</span>
                 </div>
-                <div class="telemetry-item">
-                  <span class="telemetry-label">SPECIALTY</span>
-                  <span class="telemetry-value">DIGITAL &amp; POSTER</span>
+                <div class="telemetry-item telemetry-action">
+                  <!-- Opens the 2-photo resume viewer (script.js stops the click from reaching the card) -->
+                  <button type="button" class="btn btn-primary btn-resume" id="resumeBtn"
+                          aria-haspopup="dialog" aria-expanded="false" aria-controls="resumeViewer">
+                    <span>View Resume</span>
+                    <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -167,7 +172,7 @@
                   <h3 style="font-size: 1.1rem; color: var(--text-main);">DRIVER ID CARD</h3>
                   <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-display);">SEASON 2026</span>
                 </div>
-                <div class="driver-number">17</div>
+                <div class="driver-number">18</div>
               </div>
 
               <div class="driver-meta">
@@ -177,7 +182,7 @@
                 </div>
                 <div class="meta-box">
                   <span class="label">Age / Gender</span>
-                  <span class="val">17 Y/O, Female</span>
+                  <span class="val">18 Y/O, Female</span>
                 </div>
                 <div class="meta-box">
                   <span class="label">Academic Strand</span>
@@ -187,13 +192,17 @@
                   <span class="label">Base Location</span>
                   <span class="val">Iligan City, Lanao del Norte</span>
                 </div>
+                <div class="meta-box meta-box-wide">
+                  <span class="label">Birthday</span>
+                  <span class="val"><time datetime="2008-05-30">May 30, 2008</time></span>
+                </div>
               </div>
             </div>
 
             <div class="about-content reveal">
               <h3 style="margin-bottom: 1rem; font-size: 1.5rem;">Driven by Creative Passion &amp; Tech Precision</h3>
               <p class="about-text">
-                I am a 17-year-old Grade 12 Computer Systems Servicing (CSS) student based in Iligan City, Lanao del Norte, Philippines. My work sits at the high-speed intersection of technical discipline and bold digital visual design.
+                I am an 18-year-old Grade 12 Computer Systems Servicing (CSS) student based in Iligan City, Lanao del Norte, Philippines. My work sits at the high-speed intersection of technical discipline and bold digital visual design.
               </p>
               <p class="about-text">
                 Whether executing pixel-precise digital graphics or designing high-impact editorial posters, I approach every creative project like tuning a championship F1 race car—focusing on speed, visual aerodynamic balance, and striking aesthetics.
@@ -220,58 +229,11 @@
         </div>
       </section>
 
-      <!-- SKILLS -->
-      <section id="skills" class="section-alt">
+      <!-- CONTACT (section-alt keeps the alternating background rhythm now that Telemetry & Specs is gone) -->
+      <section id="contact" class="section-alt">
         <div class="container">
           <div class="section-title-wrap reveal">
             <span class="section-num">02</span>
-            <h2 class="section-title">Telemetry &amp; Specs</h2>
-            <div class="title-stripe"></div>
-          </div>
-
-          <div class="skills-grid">
-            <div class="f1-card skill-card washed-car-shine reveal" data-tilt="card">
-              <div class="skill-icon-wrap">
-                <i class="fa-solid fa-palette"></i>
-              </div>
-              <h3 class="skill-title">Digital Drawing</h3>
-              <p class="skill-desc">
-                High-resolution digital character artwork, precise tablet linework, dynamic lighting, color theory, and digital painting rendering.
-              </p>
-              <div class="speedometer-bar">
-                <div class="speedometer-fill" style="width: 96%;"></div>
-              </div>
-              <div class="skill-stats-footer">
-                <span>DIGITAL OUTPUT SPEED</span>
-                <span style="color:var(--accent-yellow); font-weight:800;">96% MAX</span>
-              </div>
-            </div>
-
-            <div class="f1-card skill-card washed-car-shine reveal" data-tilt="card">
-              <div class="skill-icon-wrap">
-                <i class="fa-solid fa-vector-square"></i>
-              </div>
-              <h3 class="skill-title">Illustration Design</h3>
-              <p class="skill-desc">
-                Editorial layouts, brand emblem vector graphics, poster visual balance, typography, and promotional design compositions.
-              </p>
-              <div class="speedometer-bar">
-                <div class="speedometer-fill" style="width: 93%;"></div>
-              </div>
-              <div class="skill-stats-footer">
-                <span>AERODYNAMIC BALANCE</span>
-                <span style="color:var(--accent-yellow); font-weight:800;">93% MAX</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- CONTACT -->
-      <section id="contact">
-        <div class="container">
-          <div class="section-title-wrap reveal">
-            <span class="section-num">03</span>
             <h2 class="section-title">Pit Radio (Contact)</h2>
             <div class="title-stripe"></div>
           </div>
@@ -441,6 +403,39 @@
         </div>
       </section>
 
+      <!-- NEW: horror film section -->
+      <section id="film">
+        <div class="container">
+          <div class="section-title-wrap">
+            <span class="section-num">03</span>
+            <h2 class="section-title" data-tilt="heading">Komunikasyon at Pananaliksik</h2>
+            <div class="title-stripe"></div>
+          </div>
+
+          <div class="f1-card case-study-card">
+            <div class="case-study-header">
+              <div>
+                <span class="case-study-tag"><i class="fa-solid fa-film"></i> HORROR FILM</span>
+                <h3 class="case-study-title">Komunikasyon at Pananaliksik</h3>
+              </div>
+            </div>
+
+            <!-- Replace this paragraph with your own short reflection -->
+            <p class="film-reflection">Write your short reflection here.</p>
+
+            <!-- Paste your YouTube link in the href below -->
+            <div class="case-study-cta">
+              <a href="[PASTE YOUTUBE LINK HERE]" class="btn btn-primary film-link" data-tilt="button" data-cursor-label="WATCH"
+                 target="_blank" rel="noopener"
+                 aria-label="Watch Komunikasyon at Pananaliksik on YouTube (opens in a new tab)">
+                <span>Watch on YouTube</span>
+                <i class="fa-brands fa-youtube" aria-hidden="true"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div> <!-- END PAGE 2 -->
   </main>
 
@@ -450,9 +445,9 @@
       <div class="footer-copy">
         &copy; 2026 <strong>Trisha Arabella T. Alivio</strong>. All Rights Reserved. Grade 12 CSS Strand.
       </div>
-      <a href="#header" class="back-to-top" aria-label="Back to Top">
+      <button type="button" class="back-to-top" id="backToTop" aria-label="Back to top" data-cursor-label="TOP">
         <i class="fa-solid fa-arrow-up"></i>
-      </a>
+      </button>
     </div>
   </footer>
 
@@ -478,6 +473,25 @@
       <button class="lightbox-nav next" id="lightboxNext" aria-label="Next artwork">
         <i class="fa-solid fa-chevron-right"></i>
       </button>
+    </div>
+  </div>
+
+  <!-- RESUME VIEWER: two A4 photos, no text. Must exist at page load (hidden) so the tilt module can pick up the images.
+       .resume-page = wrapper animated by the open/close (FLIP) transition.
+       the <img data-tilt="resume"> inside = floats and faces the cursor (tilt module). Two elements, so the transforms never fight.
+       Put your files at images/resume-1.jpg and images/resume-2.jpg. -->
+  <div class="resume-viewer" id="resumeViewer" role="dialog" aria-modal="true" aria-label="Resume" aria-hidden="true" data-no-shine>
+    <div class="resume-backdrop"></div>
+    <button type="button" class="resume-close" id="resumeClose" aria-label="Close resume" data-cursor-label="CLOSE">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+    <div class="resume-stage">
+      <div class="resume-page">
+        <img data-tilt="resume" src="images/resume-1.jpg" alt="Resume, page 1 of 2" draggable="false">
+      </div>
+      <div class="resume-page">
+        <img data-tilt="resume" src="images/resume-2.jpg" alt="Resume, page 2 of 2" draggable="false">
+      </div>
     </div>
   </div>
 

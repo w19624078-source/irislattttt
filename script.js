@@ -22,7 +22,9 @@ window.PORTFOLIO_CONFIG = {
       form:    { max: 6,  amp: 6, rot: 0.3, scale: 1.01,  dur: [4.4, 5.0] },
       heading: { max: 10, amp: 5, rot: 0.5, scale: 1.03,  dur: [3.4, 4.6], shadow: false },
       // "Hi, I'm Trisha…" — big element, so gentler perspective
-      title:   { max: 11, amp: 7, rot: 0.5, scale: 1,     dur: [4.6, 5.4], shadow: false, perspective: 1400 }
+      title:   { max: 11, amp: 7, rot: 0.5, scale: 1,     dur: [4.6, 5.4], shadow: false, perspective: 1400 },
+      // The two A4 resume photos: gentle float + gentle cursor-facing tilt
+      resume:  { max: 10, amp: 7, rot: 0.5, scale: 1.03,  dur: [4.2, 5.2] }
     },
     // How the hero title behaves
     titleMotion: {
@@ -37,6 +39,16 @@ window.PORTFOLIO_CONFIG = {
     sweepMs: 1100,           // duration of every shine sweep
     idlePulseMs: 5000,       // idle mode: title shine repeats this often
     staggerMs: 140           // delay between the title's text pieces (wave effect)
+  },
+
+  /* Resume viewer (button -> 2 A4 photos, iOS-style shared-element transition) */
+  resume: {
+    openMs: 620,             // photos fly from the button to their place
+    closeMs: 420,            // photos shrink back into the button
+    staggerMs: 60,           // second photo starts this much later (opening only)
+    backdropMs: 300,         // dark scrim fade
+    reduceMs: 200,           // prefers-reduced-motion: simple fade
+    easing: 'cubic-bezier(0.32, 0.72, 0, 1)'   // iOS-like spring feel
   },
 
   /* F1 car cursor */
@@ -106,7 +118,7 @@ window.PORTFOLIO_CONFIG = {
 
 
 /* ==========================================================================
-   CORE — theme, page tabs, header, mobile menu, reveal (original logic)
+   CORE — theme, page tabs, header, mobile menu, reveal, back-to-top
    ========================================================================== */
 (function () {
   'use strict';
@@ -198,6 +210,18 @@ window.PORTFOLIO_CONFIG = {
       navMenu.classList.contains('active') ? 'fa-solid fa-xmark' : 'fa-solid fa-bars-staggered';
   });
 
+  /* BACK TO TOP — the footer is shared, so this one button works on page 1 and page 2.
+     (The old <a href="#header"> did nothing because #header is position: fixed.) */
+  const backToTop = document.getElementById('backToTop');
+  if (backToTop) {
+    backToTop.addEventListener('click', () => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      const logo = document.querySelector('.logo');           // keyboard users land back at the top, not stranded in the footer
+      if (logo) logo.focus({ preventScroll: true });
+    });
+  }
+
   /* SCROLL REVEAL */
   const revealElements = document.querySelectorAll('.reveal');
   function revealOnScroll() {
@@ -256,7 +280,7 @@ window.PORTFOLIO_CONFIG = {
   document.documentElement.style.setProperty('--shine-ms', CFG.sweepMs + 'ms');
 
   const EXCLUDE = 'script,style,noscript,textarea,input,select,option,svg,canvas,' +
-                  '.cursor-f1-car,.f1-stage,[data-no-shine]';
+                  '.cursor-f1-car,.f1-stage,.resume-viewer,[data-no-shine]';
 
   function wrap(root) {
     if (!root) return;
@@ -464,8 +488,159 @@ window.PORTFOLIO_CONFIG = {
 
 
 /* ==========================================================================
+   RESUME VIEWER — "View Resume" button -> two A4 photos.
+   iOS-style shared-element (FLIP) transition between the button and the photos,
+   plain dark scrim (no glass). Built on the Web Animations API:
+     - every transition starts from the CURRENT visual state, so closing mid-open
+       or re-opening mid-close is always smooth (no jumps);
+     - the animated element is the .resume-page wrapper; the tilt module drives the
+       <img data-tilt="resume"> inside it, so the two transforms never collide.
+   Esc / backdrop / X closes, focus is trapped, scroll is locked.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  const viewer = document.getElementById('resumeViewer');
+  const btn = document.getElementById('resumeBtn');
+  const closeBtn = document.getElementById('resumeClose');
+  if (!viewer || !btn || !closeBtn) return;
+
+  const C = window.PORTFOLIO_CONFIG.resume;
+  const pages = Array.from(viewer.querySelectorAll('.resume-page'));
+  const backdrop = viewer.querySelector('.resume-backdrop');
+  const fadeEls = [backdrop, closeBtn];
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let state = 'closed';                 // closed | opening | open | closing
+  let seq = 0;                          // id of the latest transition (older ones are ignored)
+
+  function lockScroll() {
+    const sw = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = sw > 0 ? sw + 'px' : '';
+    document.body.classList.add('lightbox-open');
+  }
+  function unlockScroll() {
+    document.body.style.paddingRight = '';
+    document.body.classList.remove('lightbox-open');
+  }
+
+  /* backdrop + close button: simple opacity fade from wherever they are right now */
+  function fade(el, to, ms, fresh) {
+    const from = fresh ? 0 : parseFloat(getComputedStyle(el).opacity);
+    el.getAnimations().forEach((a) => a.cancel());
+    el.animate([{ opacity: from }, { opacity: to }], { duration: ms, easing: 'ease', fill: 'both' });
+  }
+
+  /* the photos: fly between the button and their final place */
+  function flip(opening, fresh) {
+    const my = ++seq;
+    const b = btn.getBoundingClientRect();
+
+    const anims = pages.map((page, i) => {
+      const cs = getComputedStyle(page);                  // current visual state (includes a running animation)
+      const curT = cs.transform;
+      const curO = cs.opacity;
+      page.getAnimations().forEach((a) => a.cancel());    // back to the natural layout box...
+
+      const r = page.getBoundingClientRect();             // ...so we can measure it
+      const s = Math.min(b.width / r.width, b.height / r.height);
+      const dx = (b.left + b.width / 2) - (r.left + r.width / 2);
+      const dy = (b.top + b.height / 2) - (r.top + r.height / 2);
+      const collapsed = 'translate(' + dx + 'px,' + dy + 'px) scale(' + s + ')';
+
+      const from = fresh ? { transform: collapsed, opacity: 0 } : { transform: curT, opacity: curO };
+      const to = opening ? { transform: 'none', opacity: 1 } : { transform: collapsed, opacity: 0 };
+
+      let keyframes;
+      if (reduce) {
+        keyframes = [{ opacity: from.opacity }, { opacity: to.opacity }];
+      } else if (opening) {
+        keyframes = [from, { opacity: 1, offset: 0.3 }, to];                         // fades in quickly while flying out
+      } else {
+        keyframes = [from, { opacity: Number(from.opacity), offset: 0.55 }, to];     // stays solid, fades at the end
+      }
+
+      return page.animate(keyframes, {
+        duration: reduce ? C.reduceMs : (opening ? C.openMs : C.closeMs),
+        delay: (!reduce && opening && fresh) ? i * C.staggerMs : 0,                  // second photo follows slightly later
+        easing: reduce ? 'ease' : C.easing,
+        fill: 'both'
+      });
+    });
+
+    Promise.all(anims.map((a) => a.finished)).then(
+      () => done(my, opening),
+      () => { /* cancelled by a newer transition */ }
+    );
+  }
+
+  function done(my, opening) {
+    if (my !== seq) return;                               // a newer transition took over
+    if (opening) {
+      pages.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));   // natural state looks identical
+      state = 'open';
+    } else {
+      finishClose();
+    }
+  }
+
+  function open() {
+    if (state === 'opening' || state === 'open') return;
+    const fresh = state === 'closed';                     // 'closing' -> reopen smoothly from the current state
+    if (fresh) {
+      viewer.classList.add('is-active');
+      viewer.setAttribute('aria-hidden', 'false');
+      lockScroll();
+    }
+    state = 'opening';
+    btn.setAttribute('aria-expanded', 'true');
+    fadeEls.forEach((el) => fade(el, 1, C.backdropMs, fresh));
+    flip(true, fresh);
+    closeBtn.focus({ preventScroll: true });
+  }
+
+  function close() {
+    if (state === 'closed' || state === 'closing') return;
+    state = 'closing';
+    btn.setAttribute('aria-expanded', 'false');
+    fadeEls.forEach((el) => fade(el, 0, C.closeMs, false));
+    flip(false, false);
+  }
+
+  function finishClose() {
+    state = 'closed';
+    viewer.classList.remove('is-active');
+    viewer.setAttribute('aria-hidden', 'true');
+    pages.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
+    fadeEls.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+    unlockScroll();
+    btn.focus({ preventScroll: true });
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();                                  // the hero card itself navigates to page 2: don't
+    open();
+  });
+  closeBtn.addEventListener('click', close);
+  viewer.addEventListener('click', (e) => {
+    if (e.target.closest('.resume-page') || e.target.closest('.resume-close')) return;
+    close();                                              // click on the dark backdrop
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (state === 'closed') return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key === 'Tab') { e.preventDefault(); closeBtn.focus(); }   // focus trap: the X is the only control
+  });
+
+  window.Portfolio = window.Portfolio || {};
+  window.Portfolio.resume = { open: open, close: close };
+})();
+
+
+/* ==========================================================================
    TILT — ONE reusable effect: gentle 3D float + turning to face the cursor.
-   Usage: <div data-tilt="card">  (presets: button, icon, image, card, chip, form, heading, title)
+   Usage: <div data-tilt="card">  (presets: button, icon, image, card, chip, form, heading, title, resume)
 
    Float, tilt and hover scale are composed into ONE transform per element, so they
    can never fight each other (the reveal animation uses the CSS `translate` property).
@@ -539,7 +714,7 @@ window.PORTFOLIO_CONFIG = {
   /* Regular elements: hover detection (the title is excluded, it follows the cursor anywhere) */
   function updateHover() {
     const top = pointerValid ? document.elementFromPoint(px, py) : null;
-    const covered = top && top.closest('.lightbox, .header');
+    const covered = top && top.closest('.lightbox, .header, .resume-viewer');
     const slop = CFG.hoverSlop;
 
     for (let i = 0; i < items.length; i++) {
@@ -1010,6 +1185,9 @@ window.PORTFOLIO_CONFIG = {
 /* ==========================================================================
    F1 BACKGROUND — endless side-view race on a fixed canvas (N cars) + dark-mode
    night lighting (pole glow, crowd light sticks, car lights) + fireworks.
+   Fireworks sit BEHIND the stadium: they are drawn on the overlay canvas (above the
+   dark scrim so they stay bright), then the skyline, light poles and stands are
+   punched out of them, so they appear to rise from behind everything.
    Click a car that is behind another one to make it overtake; click the
    leader for a victory rev. Light mode = daytime, dark mode = night race.
    Pauses when the tab is hidden. Crowd sound is muted until the user opts in.
@@ -1071,6 +1249,7 @@ window.PORTFOLIO_CONFIG = {
   let crowdBoost = 0;                              // extra crowd excitement (fireworks volleys)
   let busy = false;
   let hoverCar = null;
+  let shakeX = 0, shakeY = 0;                      // this frame's camera shake (the firework cut-outs follow it)
 
   const cars = CFG.drivers.map((d, i) => ({
     d: d, idx: i, slot: 0, x: 0, laneBlend: 0, wheel: 0, ph: i * 2.3 + 0.7,
@@ -1143,6 +1322,14 @@ window.PORTFOLIO_CONFIG = {
     }
     fctx.globalAlpha = 1;
   }
+
+  /* SHARED SCENE GEOMETRY.
+     The skyline and the light-pole towers are drawn on the main canvas AND cut out of the fireworks,
+     so both read the same numbers (parallax included) and always stay aligned. */
+  const SKY_COLW = 34, SKY_PAR = 0.05;              // skyline column width / parallax
+  const TOWER_SP = 620, TOWER_PAR = 0.14;           // tower spacing / parallax
+  const skyH = (idx) => H * (0.04 + hash(idx, 1) * 0.12) * (hash(idx, 5) > 0.8 ? 1.6 : 1);
+  const towerX = (idx, off) => idx * TOWER_SP - off + hash(idx, 2) * 140;
 
   /* LAYOUT */
   const slotX = (rank) => (W - carLen * 0.62) - rank * gapPx;
@@ -1480,15 +1667,15 @@ window.PORTFOLIO_CONFIG = {
   }
 
   function drawSkyline() {
-    const colW = 34, off = worldX * 0.05;
-    const first = Math.floor(off / colW) - 1;
-    const cols = Math.ceil(W / colW) + 3;
+    const off = worldX * SKY_PAR;
+    const first = Math.floor(off / SKY_COLW) - 1;
+    const cols = Math.ceil(W / SKY_COLW) + 3;
     ctx.fillStyle = rgb(cur.skyline);
     ctx.beginPath();
     for (let i = 0; i < cols; i++) {
       const idx = first + i;
-      const h = H * (0.04 + hash(idx, 1) * 0.12) * (hash(idx, 5) > 0.8 ? 1.6 : 1);
-      ctx.rect(idx * colW - off, standTop - h + 10, colW + 1, h + 10);
+      const h = skyH(idx);
+      ctx.rect(idx * SKY_COLW - off, standTop - h + 10, SKY_COLW + 1, h + 10);
     }
     ctx.fill();
     if (mix < 0.95) {                                               // lit windows at night
@@ -1497,8 +1684,8 @@ window.PORTFOLIO_CONFIG = {
       for (let i = 0; i < cols; i++) {
         const idx = first + i;
         if (hash(idx, 9) < 0.5) continue;
-        const h = H * (0.04 + hash(idx, 1) * 0.12) * (hash(idx, 5) > 0.8 ? 1.6 : 1);
-        const x = idx * colW - off;
+        const h = skyH(idx);
+        const x = idx * SKY_COLW - off;
         for (let w = 0; w < 3; w++) ctx.rect(x + 6 + w * 9, standTop - h + 18 + hash(idx, 20 + w) * h * 0.5, 3, 4);
       }
       ctx.fill();
@@ -1507,13 +1694,13 @@ window.PORTFOLIO_CONFIG = {
 
   /* LIGHT POLES (floodlight towers): lamps are OFF by day and switch ON with dark mode */
   function drawTowers() {
-    const sp = 620, off = worldX * 0.14;
-    const first = Math.floor(off / sp) - 1;
+    const off = worldX * TOWER_PAR;
+    const first = Math.floor(off / TOWER_SP) - 1;
     const top = H * 0.1, base = standTop + 14;
     const lit = Math.pow(1 - mix, 1.4);                 // 0 in light mode, fades in with the theme switch
-    for (let i = 0; i < Math.ceil(W / sp) + 3; i++) {
+    for (let i = 0; i < Math.ceil(W / TOWER_SP) + 3; i++) {
       const idx = first + i;
-      const x = idx * sp - off + hash(idx, 2) * 140;
+      const x = towerX(idx, off);
       if (x < -H * 0.35 || x > W + H * 0.35) continue;
 
       ctx.fillStyle = rgb(cur.tower);
@@ -1796,8 +1983,8 @@ window.PORTFOLIO_CONFIG = {
      FIREWORKS (dark mode only)
      A volley of 3-6 rockets every 6 s, staggered so bursts overlap: rocket +
      fading trail -> burst of coloured particles (big + small, some ring shells),
-     additive blending with a soft halo. Drawn on the overlay canvas that sits
-     above the scrim and below the content.
+     additive blending with a soft halo. Drawn on the overlay canvas (above the scrim,
+     so they stay bright), then fwCutOut() erases everything that is in front of them.
      ====================================================================== */
   function parseHex(h) {
     const m = /^#?([0-9a-f]{6})$/i.exec((h || '').trim());
@@ -1835,9 +2022,9 @@ window.PORTFOLIO_CONFIG = {
   function fwLaunch(big) {
     const x0 = rand(W * 0.12, W * 0.88);
     rockets.push({
-      x: x0, y: H * 0.7, x0: x0, y0: H * 0.7,
+      x: x0, y: H * 0.7, x0: x0, y0: H * 0.7,                       // starts behind the stands, so it visibly rises from behind them
       tx: clamp(x0 + rand(-W * 0.12, W * 0.12), W * 0.08, W * 0.92),
-      ty: rand(H * 0.08, H * 0.4),                                  // upper sky, above the grandstand / skyline
+      ty: rand(H * 0.08, H * 0.4),                                  // upper sky
       t: 0, dur: rand(0.85, 1.25), big: big, trail: []
     });
   }
@@ -1928,7 +2115,41 @@ window.PORTFOLIO_CONFIG = {
     }
   }
 
-  /* Overlay render: night lighting (always, in dark mode) + fireworks */
+  /* Erase everything that sits IN FRONT of the fireworks: skyline, light poles (bodies + lamp heads),
+     and the whole stand block (canopy, crowd, wall, track). Uses the same geometry and the same camera
+     shake as the main canvas, so the cut-outs line up exactly. One path, one fill. */
+  function fwCutOut() {
+    fctx.save();
+    fctx.translate(shakeX, shakeY);
+    fctx.globalCompositeOperation = 'destination-out';
+    fctx.fillStyle = '#000';
+    fctx.beginPath();
+
+    const sOff = worldX * SKY_PAR;                                  // skyline columns
+    const sFirst = Math.floor(sOff / SKY_COLW) - 1;
+    const sCols = Math.ceil(W / SKY_COLW) + 3;
+    for (let i = 0; i < sCols; i++) {
+      const idx = sFirst + i;
+      fctx.rect(idx * SKY_COLW - sOff, standTop - skyH(idx) + 10, SKY_COLW + 1, skyH(idx) + 10);
+    }
+
+    const tOff = worldX * TOWER_PAR;                                // light poles
+    const tFirst = Math.floor(tOff / TOWER_SP) - 1;
+    const tTop = H * 0.1, tBase = standTop + 14;
+    for (let i = 0; i < Math.ceil(W / TOWER_SP) + 3; i++) {
+      const x = towerX(tFirst + i, tOff);
+      if (x < -H * 0.35 || x > W + H * 0.35) continue;
+      fctx.rect(x - 2.5, tTop, 5, tBase - tTop);                    // pole
+      fctx.rect(x - 22, tTop - 6, 44, 12);                          // lamp head
+    }
+
+    fctx.rect(-10, standTop - 10, W + 20, H - standTop + 30);       // canopy, stands, crowd, wall, track
+
+    fctx.fill();
+    fctx.restore();
+  }
+
+  /* Overlay render: fireworks (cut out behind the scene) + night lighting (always on top, additive) */
   function fwRender() {
     if (!fctx) return;
     if (!isDark()) {
@@ -1937,57 +2158,63 @@ window.PORTFOLIO_CONFIG = {
     }
     fwHadContent = true;
     fctx.clearRect(0, 0, W, H);
-    fctx.globalCompositeOperation = 'lighter';                      // additive: overlapping light and sparks glow
     fctx.lineCap = 'round';
 
-    renderLights();                                                 // pole glow, light sticks, car lights
+    if (rockets.length || flashes.length || fwLive) {
+      fctx.globalCompositeOperation = 'lighter';                    // additive: overlapping sparks glow
 
-    // rocket trails + heads
-    for (let i = 0; i < rockets.length; i++) {
-      const r = rockets[i], tr = r.trail, n = tr.length / 2;
-      for (let j = 1; j < n; j++) {
-        const f = j / n;
-        fctx.strokeStyle = 'rgba(255,190,90,' + (f * 0.85).toFixed(2) + ')';
-        fctx.lineWidth = 1 + f * 3;
-        fctx.beginPath();
-        fctx.moveTo(tr[(j - 1) * 2], tr[(j - 1) * 2 + 1]);
-        fctx.lineTo(tr[j * 2], tr[j * 2 + 1]);
-        fctx.stroke();
+      // rocket trails + heads
+      for (let i = 0; i < rockets.length; i++) {
+        const r = rockets[i], tr = r.trail, n = tr.length / 2;
+        for (let j = 1; j < n; j++) {
+          const f = j / n;
+          fctx.strokeStyle = 'rgba(255,190,90,' + (f * 0.85).toFixed(2) + ')';
+          fctx.lineWidth = 1 + f * 3;
+          fctx.beginPath();
+          fctx.moveTo(tr[(j - 1) * 2], tr[(j - 1) * 2 + 1]);
+          fctx.lineTo(tr[j * 2], tr[j * 2 + 1]);
+          fctx.stroke();
+        }
+        fctx.fillStyle = 'rgba(255,245,210,0.95)';
+        fctx.beginPath(); fctx.arc(r.x, r.y, 3.2, 0, TAU); fctx.fill();
       }
-      fctx.fillStyle = 'rgba(255,245,210,0.95)';
-      fctx.beginPath(); fctx.arc(r.x, r.y, 3.2, 0, TAU); fctx.fill();
-    }
 
-    // white-hot centre flash (big bursts)
-    for (let i = 0; i < flashes.length; i++) {
-      const f = flashes[i];
-      const k = f.life / f.max, a = 1 - k, rad = f.r * (0.4 + 0.6 * k);
-      const g = fctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, rad);
-      g.addColorStop(0, 'rgba(255,255,235,' + a.toFixed(2) + ')');
-      g.addColorStop(0.35, 'rgba(255,190,80,' + (a * 0.5).toFixed(2) + ')');
-      g.addColorStop(1, 'rgba(255,120,30,0)');
-      fctx.fillStyle = g;
-      fctx.fillRect(f.x - rad, f.y - rad, rad * 2, rad * 2);
-    }
+      // white-hot centre flash (big bursts)
+      for (let i = 0; i < flashes.length; i++) {
+        const f = flashes[i];
+        const k = f.life / f.max, a = 1 - k, rad = f.r * (0.4 + 0.6 * k);
+        const g = fctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, rad);
+        g.addColorStop(0, 'rgba(255,255,235,' + a.toFixed(2) + ')');
+        g.addColorStop(0.35, 'rgba(255,190,80,' + (a * 0.5).toFixed(2) + ')');
+        g.addColorStop(1, 'rgba(255,120,30,0)');
+        fctx.fillStyle = g;
+        fctx.fillRect(f.x - rad, f.y - rad, rad * 2, rad * 2);
+      }
 
-    // burst particles: longer streaks with a soft halo; they twinkle, shrink and fade
-    for (let i = 0; i < fwLimit; i++) {
-      const p = fwPool[i];
-      if (!p.on) continue;
-      const f = 1 - p.life / p.max;
-      const alpha = Math.min(1, Math.pow(f, 0.8) * (0.8 + 0.2 * Math.sin(p.life * 22 + p.tw)) * 1.15);
-      const col = (p.r | 0) + ',' + (p.g | 0) + ',' + (p.b | 0);
-      const w = p.size * (0.5 + 0.5 * f);
-      const tx = p.x - p.vx * 0.05, ty = p.y - p.vy * 0.05;
-      if (!small) {                                                 // soft halo
-        fctx.strokeStyle = 'rgba(' + col + ',' + (alpha * 0.25).toFixed(2) + ')';
-        fctx.lineWidth = w * 3.4;
+      // burst particles: longer streaks with a soft halo; they twinkle, shrink and fade
+      for (let i = 0; i < fwLimit; i++) {
+        const p = fwPool[i];
+        if (!p.on) continue;
+        const f = 1 - p.life / p.max;
+        const alpha = Math.min(1, Math.pow(f, 0.8) * (0.8 + 0.2 * Math.sin(p.life * 22 + p.tw)) * 1.15);
+        const col = (p.r | 0) + ',' + (p.g | 0) + ',' + (p.b | 0);
+        const w = p.size * (0.5 + 0.5 * f);
+        const tx = p.x - p.vx * 0.05, ty = p.y - p.vy * 0.05;
+        if (!small) {                                               // soft halo
+          fctx.strokeStyle = 'rgba(' + col + ',' + (alpha * 0.25).toFixed(2) + ')';
+          fctx.lineWidth = w * 3.4;
+          fctx.beginPath(); fctx.moveTo(p.x, p.y); fctx.lineTo(tx, ty); fctx.stroke();
+        }
+        fctx.strokeStyle = 'rgba(' + col + ',' + alpha.toFixed(2) + ')';
+        fctx.lineWidth = w;
         fctx.beginPath(); fctx.moveTo(p.x, p.y); fctx.lineTo(tx, ty); fctx.stroke();
       }
-      fctx.strokeStyle = 'rgba(' + col + ',' + alpha.toFixed(2) + ')';
-      fctx.lineWidth = w;
-      fctx.beginPath(); fctx.moveTo(p.x, p.y); fctx.lineTo(tx, ty); fctx.stroke();
+
+      fwCutOut();                                                   // hide them behind skyline / poles / stands
     }
+
+    fctx.globalCompositeOperation = 'lighter';                      // night lighting goes on top of the cut-out
+    renderLights();                                                 // pole glow, light sticks, car lights
     fctx.globalCompositeOperation = 'source-over';
   }
 
@@ -2065,8 +2292,8 @@ window.PORTFOLIO_CONFIG = {
   }
 
   /* POINTER: hover + click on cars (page content sits above the canvas, so we listen on the document
-     and only count clicks on empty background, not on cards / buttons / text / images) */
-  const NON_BG = 'a,button,input,textarea,select,label,summary,img,svg,.f1-card,.hero-art-card,.lightbox,.header,' +
+     and only count clicks on empty background, not on cards / buttons / text / images / viewers) */
+  const NON_BG = 'a,button,input,textarea,select,label,summary,img,svg,.f1-card,.hero-art-card,.lightbox,.resume-viewer,.header,' +
                  '.nav-menu,.sound-toggle,[data-tilt],.overtake-banner';
   const TEXT_TAGS = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN', 'STRONG', 'EM', 'LI', 'I', 'SMALL', 'B', 'FIGCAPTION']);
 
@@ -2318,8 +2545,13 @@ window.PORTFOLIO_CONFIG = {
     lq.length = 0; cones.length = 0;                                 // reset the lighting queue for this frame
 
     const shakeAmt = reduce ? 0 : Math.min(3, CFG.shake * (boostMax + Math.max(0, accelS) * 0.15 + revMax * 0.5));
+    shakeX = 0; shakeY = 0;
     ctx.save();
-    if (shakeAmt > 0.05) ctx.translate((Math.random() - 0.5) * 2 * shakeAmt, (Math.random() - 0.5) * 2 * shakeAmt);
+    if (shakeAmt > 0.05) {
+      shakeX = (Math.random() - 0.5) * 2 * shakeAmt;
+      shakeY = (Math.random() - 0.5) * 2 * shakeAmt;
+      ctx.translate(shakeX, shakeY);
+    }
 
     updatePalette();
     drawSky();
@@ -2340,7 +2572,7 @@ window.PORTFOLIO_CONFIG = {
     drawStreaks();
     ctx.restore();
 
-    fwRender();                                                      // overlay canvas, unaffected by camera shake
+    fwRender();                                                      // overlay canvas: fireworks (cut out behind the scene) + lights
   }
 
   /* LOOP (pauses when the tab is hidden) */

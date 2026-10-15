@@ -44,6 +44,9 @@
   --scrim-mid: 0.62;
   --scrim-bottom: 0.10;
 
+  /* Resume viewer: plain dark scrim (no glass / blur) */
+  --resume-scrim: rgba(18, 20, 45, 0.88);
+
   /* Text shine: flank colour + bright core (dark mode: yellow flanks, white-hot core) */
   --shine-hi: var(--accent-yellow);
   --shine-core: #FFFFFF;
@@ -84,6 +87,11 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { scroll-behavior: smooth; font-size: 16px; }
+
+/* Reduced motion: scrollTo({ behavior: 'auto' }) (back-to-top) must really be instant */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
 
 body {
   background-color: var(--bg-primary);
@@ -159,7 +167,8 @@ main, .footer { position: relative; z-index: 1; }
    F1 RACING BACKGROUND + FIREWORKS + NIGHT LIGHTING
    z-order inside the stage: race canvas < scrim < overlay canvas.
    The overlay canvas carries fireworks, pole glow, crowd light sticks and car lights,
-   so the dark scrim never dims them. The stage itself (z-index 0) is below <main> (z-index 1).
+   so the dark scrim never dims them. script.js cuts the fireworks out behind the skyline,
+   light poles and stands. The stage itself (z-index 0) is below <main> (z-index 1).
    ========================================== */
 .f1-stage { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 #f1Canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -240,7 +249,7 @@ body.f1-car-hover { cursor: pointer; }
   position: fixed; top: 0; left: 0;
   width: 100vw; height: 100vh;
   pointer-events: none;
-  z-index: 10040;                 /* above the lightbox (10000) so the cursor is never hidden */
+  z-index: 10040;                 /* above the lightbox / resume viewer (10000) so the cursor is never hidden */
   display: none;
 }
 
@@ -562,6 +571,16 @@ body.hovering .cursor-tooltip { opacity: 1; }
 .telemetry-label { font-family: var(--font-display); font-size: 0.65rem; color: var(--text-muted); }
 .telemetry-value { font-family: var(--font-display); font-size: 0.9rem; font-weight: 800; color: var(--accent-yellow); }
 
+/* "View Resume" button inside the badge (compact version of the F1 red button) */
+.telemetry-action { justify-content: center; align-items: flex-end; }
+.hero-telemetry-badge .btn-resume {
+  width: auto;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.68rem;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
 .racing-stripe-bg {
   position: absolute;
   right: -5%; top: 20%;
@@ -602,6 +621,7 @@ body.hovering .cursor-tooltip { opacity: 1; }
 
 .driver-meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
 .meta-box { border-left: 2px solid var(--accent-red); padding-left: 0.8rem; }
+.meta-box-wide { grid-column: 1 / -1; }      /* 5th box spans both columns: no empty hole */
 .meta-box .label { font-family: var(--font-display); font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; display: block; }
 .meta-box .val { font-weight: 700; font-size: 0.92rem; color: var(--text-main); }
 
@@ -616,28 +636,6 @@ body.hovering .cursor-tooltip { opacity: 1; }
   display: flex; align-items: center; gap: 0.75rem;
 }
 .highlight-item i { font-size: 1.4rem; color: var(--accent-yellow); }
-
-/* ==========================================
-   SKILLS
-   ========================================== */
-.skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
-.skill-card { padding: 2.2rem; }
-.skill-icon-wrap {
-  width: 52px; height: 52px;
-  background: rgba(255, 0, 38, 0.12);
-  border: 1px solid var(--accent-red);
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
-  color: var(--accent-yellow);
-  margin-bottom: 1.5rem;
-  transform: skewX(-5deg);
-}
-.skill-title { font-size: 1.25rem; margin-bottom: 0.75rem; }
-.skill-desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
-.speedometer-bar { width: 100%; height: 8px; background: #12142D; border-radius: 4px; overflow: hidden; }
-.speedometer-fill { height: 100%; background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-yellow) 100%); border-radius: 4px; }
-.skill-stats-footer { display: flex; justify-content: space-between; font-family: var(--font-display); font-size: 0.72rem; margin-top: 0.5rem; color: var(--text-muted); }
 
 /* ==========================================
    CONTACT
@@ -725,10 +723,13 @@ body.hovering .cursor-tooltip { opacity: 1; }
 .case-study-box h4 { font-size: 0.95rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; color: #fff; }
 .case-study-box p { color: var(--text-muted); font-size: 0.9rem; }
 
-/* Research link: replaces the old 1-4 boxes */
+/* Research link + film link (both sit in a centred call-to-action row) */
 .case-study-cta { display: flex; justify-content: center; padding: 1rem 0 0.5rem; }
-.research-link { font-size: 1rem; padding: 1.1rem 2.6rem; background-color: #D1001F; }  /* white on this red is about 5.6:1 */
-.research-link:hover { background-color: #E8002A; }
+.research-link, .film-link { font-size: 1rem; padding: 1.1rem 2.6rem; background-color: #D1001F; }  /* white on this red is about 5.6:1 */
+.research-link:hover, .film-link:hover { background-color: #E8002A; }
+
+/* Film section: short reflection above the YouTube link */
+.film-reflection { color: var(--text-muted); font-size: 1rem; max-width: 70ch; margin: 0 auto 1.5rem; text-align: center; }
 
 /* ==========================================
    FOOTER
@@ -745,6 +746,9 @@ body.hovering .cursor-tooltip { opacity: 1; }
   border: 1px solid var(--border-color);
   color: var(--text-main);
   width: 42px; height: 42px;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   transition: all var(--transition-fast);
@@ -809,6 +813,72 @@ body.hovering .cursor-tooltip { opacity: 1; }
 .lightbox-nav.next { right: max(0.5rem, calc(50% - var(--lb-size) / 2 - 3.5rem)); }
 .lightbox-nav[hidden] { display: none; }
 .lightbox-close:hover, .lightbox-nav:hover { background: var(--accent-red); border-color: var(--accent-red); }
+
+/* ==========================================
+   RESUME VIEWER (two A4 photos, plain dark scrim, no glass)
+   - .resume-page  : wrapper animated by script.js (open/close FLIP transition)
+   - img[data-tilt]: float + cursor-facing tilt (tilt module). Separate elements so transforms never collide.
+   ========================================== */
+.resume-viewer {
+  --resume-page-w: min(42vw, calc((100vh - 8rem) * 210 / 297));   /* both pages always fit the viewport */
+  position: fixed; inset: 0;
+  z-index: 10000;
+  display: none;                      /* script.js adds .is-active while open / animating */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.resume-viewer.is-active { display: flex; }
+
+.resume-backdrop { position: fixed; inset: 0; background: var(--resume-scrim); }
+
+.resume-stage {
+  position: relative; z-index: 1;
+  margin: auto;                       /* centres, and stays scrollable when stacked */
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(12px, 2.5vw, 32px);
+  padding: 4.5rem 1rem 2rem;
+}
+
+.resume-page {
+  flex: none;
+  width: var(--resume-page-w);
+  aspect-ratio: 210 / 297;            /* A4 */
+  background: #fff;
+  border-radius: 4px;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.resume-page img[data-tilt] {
+  width: 100%; height: 100%;
+  object-fit: contain;                /* never stretched */
+  border-radius: 4px;
+  background: #fff;
+  user-select: none;
+  -webkit-user-drag: none;
+  box-shadow: var(--tilt-shadow, 0 18px 40px -12px rgba(0, 0, 0, 0.55));
+}
+
+.resume-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 2;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--palette-midnight);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.resume-close:hover { background: var(--accent-red); border-color: var(--accent-red); }
+
+/* Below 768px: stack the two pages vertically inside the scrollable viewer */
+@media (max-width: 767px) {
+  .resume-viewer { --resume-page-w: min(88vw, 560px); }
+  .resume-stage { flex-direction: column; gap: 16px; }
+}
 
 /* ==========================================
    SCROLL REVEAL (uses `translate`, so it never collides with the tilt `transform`)
