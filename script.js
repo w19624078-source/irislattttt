@@ -201,14 +201,111 @@ window.PORTFOLIO_CONFIG = {
     header.classList.toggle('scrolled', window.scrollY > 40);
   }, { passive: true });
 
-  /* MOBILE MENU */
+  /* MOBILE MENU — slide-in panel + dim overlay (mobile only, max-width: 991px).
+     While open:
+       - the overlay catches every tap (tapping it closes the menu) and the page cannot scroll;
+       - <main>, the footer, the sound toggle, the logo and the theme toggle are made inert
+         (not tappable, not focusable, hidden from screen readers);
+       - keyboard focus is trapped between the three links and the hamburger / X button.
+     Closes on: overlay tap, tap on the header strip, nav link, hamburger / X, Escape, resize to desktop.
+     After closing, focus returns to the hamburger button. */
   const mobileToggle = document.getElementById('mobileToggle');
   const navMenu = document.getElementById('navMenu');
-  mobileToggle.addEventListener('click', () => {
-    navMenu.classList.toggle('active');
-    mobileToggle.querySelector('i').className =
-      navMenu.classList.contains('active') ? 'fa-solid fa-xmark' : 'fa-solid fa-bars-staggered';
+  const navOverlay = document.getElementById('navOverlay');
+  const navIcon = mobileToggle.querySelector('i');
+  const navLinks = Array.from(navMenu.querySelectorAll('.nav-link'));
+  const desktopQuery = window.matchMedia('(min-width: 992px)');
+  const lockedParts = [
+    document.querySelector('main'),
+    document.querySelector('footer'),
+    document.getElementById('soundToggle'),
+    document.querySelector('.logo'),
+    themeToggle
+  ].filter(Boolean);
+  let navOpen = false;
+
+  function lockNavScroll() {                                  // same approach as the lightbox: no layout jump
+    const sw = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = sw > 0 ? sw + 'px' : '';
+    document.body.classList.add('nav-open');
+  }
+  function unlockNavScroll() {
+    document.body.style.paddingRight = '';
+    document.body.classList.remove('nav-open');
+  }
+
+  function setPageInert(on) {
+    lockedParts.forEach((el) => {
+      if (on) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); }
+      else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
+    });
+  }
+
+  function openMenu() {
+    if (navOpen) return;
+    navOpen = true;
+    navMenu.classList.add('active');
+    if (navOverlay) navOverlay.classList.add('active');
+    lockNavScroll();
+    setPageInert(true);
+    navIcon.className = 'fa-solid fa-xmark';
+    mobileToggle.setAttribute('aria-expanded', 'true');
+    mobileToggle.setAttribute('aria-label', 'Close Navigation Menu');
+    if (navLinks[0]) navLinks[0].focus({ preventScroll: true });
+  }
+
+  function closeMenu(returnFocus) {
+    if (!navOpen) return;
+    navOpen = false;
+    navMenu.classList.remove('active');
+    if (navOverlay) navOverlay.classList.remove('active');
+    unlockNavScroll();
+    setPageInert(false);
+    navIcon.className = 'fa-solid fa-bars-staggered';
+    mobileToggle.setAttribute('aria-expanded', 'false');
+    mobileToggle.setAttribute('aria-label', 'Open Navigation Menu');
+    if (returnFocus !== false) mobileToggle.focus({ preventScroll: true });
+  }
+
+  mobileToggle.addEventListener('click', () => { if (navOpen) closeMenu(); else openMenu(); });
+
+  /* Tap on the dim overlay closes. stopPropagation: the F1 background listens for clicks on the
+     document and would otherwise treat this tap as a click on a car behind the overlay. */
+  if (navOverlay) {
+    navOverlay.addEventListener('click', (e) => { e.stopPropagation(); closeMenu(); });
+  }
+
+  /* Tap on the header strip (outside the panel and the hamburger) closes too */
+  header.addEventListener('click', (e) => {
+    if (navOpen && !e.target.closest('#navMenu, #mobileToggle')) closeMenu();
   });
+
+  /* A nav link closes the menu FIRST (capture phase runs before the links' own onclick handlers),
+     so scrolling is unlocked before switchPage / handleContactClick run. */
+  navMenu.addEventListener('click', (e) => {
+    if (e.target.closest('.nav-link')) closeMenu();
+  }, true);
+
+  /* Escape closes, Tab is trapped between the links and the hamburger / X */
+  document.addEventListener('keydown', (e) => {
+    if (!navOpen) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeMenu(); return; }
+    if (e.key === 'Tab') {
+      const items = navLinks.concat(mobileToggle);
+      const first = items[0];
+      const last = items[items.length - 1];
+      const current = document.activeElement;
+      const inside = items.indexOf(current) !== -1;
+      if (e.shiftKey && (current === first || !inside)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (current === last || !inside)) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* Growing past the mobile breakpoint closes the menu (the toggle is hidden there, so no focus return) */
+  function onDesktopChange() { if (desktopQuery.matches) closeMenu(false); }
+  if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', onDesktopChange);
+  else if (desktopQuery.addListener) desktopQuery.addListener(onDesktopChange);
+  window.addEventListener('resize', onDesktopChange);
 
   /* BACK TO TOP — the footer is shared, so this one button works on page 1 and page 2.
      (The old <a href="#header"> did nothing because #header is position: fixed.) */
