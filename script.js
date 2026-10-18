@@ -2707,3 +2707,94 @@ window.PORTFOLIO_CONFIG = {
   render();
   start();
 })();
+
+
+/* ==========================================================================
+   CONTACT FORM — sends the message to your Gmail through Web3Forms.
+   (The access key is public by design: it can only deliver mail to the address
+   it was registered with.)
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  const ENDPOINT = 'https://api.web3forms.com/submit';
+
+  const form = document.getElementById('contactForm');
+  const btn = document.getElementById('contactSubmit');
+  const statusEl = document.getElementById('formStatus');
+  if (!form || !btn || !statusEl) return;
+
+  const labelEl = btn.querySelector('span');
+  const iconEl = btn.querySelector('i');
+  const DEFAULT_LABEL = 'TRANSMIT MESSAGE';
+  const DEFAULT_ICON = 'fa-solid fa-paper-plane';
+
+  function setLabel(text) {                                  // the text shine wraps the label in a .tx span
+    (labelEl.querySelector('.tx') || labelEl).textContent = text;
+  }
+
+  function setStatus(text, type) {
+    statusEl.textContent = text;
+    statusEl.className = 'form-status' + (type ? ' is-' + type : '');
+  }
+
+  function setSending(on) {
+    btn.disabled = on;
+    setLabel(on ? 'TRANSMITTING...' : DEFAULT_LABEL);
+    iconEl.className = on ? 'fa-solid fa-spinner fa-spin' : DEFAULT_ICON;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    /* validation */
+    let firstBad = null;
+    form.querySelectorAll('.form-input, .form-textarea').forEach((f) => {
+      const bad = !f.checkValidity() || !f.value.trim();
+      f.classList.toggle('is-invalid', bad);
+      if (bad && !firstBad) firstBad = f;
+    });
+    if (firstBad) {
+      setStatus('Please fill in your name, a valid email and a message.', 'error');
+      firstBad.focus();
+      return;
+    }
+
+    /* spam trap: bots tick the hidden box, humans never see it */
+    if (form.botcheck && form.botcheck.checked) return;
+
+    setSending(true);
+    setStatus('Transmitting to the pit wall...', '');
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const res = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+        signal: controller.signal
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        form.reset();
+        setStatus('Message sent through Pit Radio! Thank you, I will reply soon.', 'success');
+      } else {
+        setStatus(data.message || 'Something went wrong. Please try again in a moment.', 'error');
+      }
+    } catch (err) {
+      setStatus(err.name === 'AbortError'
+        ? 'The connection timed out. Please try again.'
+        : 'Network error. Check your connection and try again.', 'error');
+    } finally {
+      clearTimeout(timeout);
+      setSending(false);
+    }
+  });
+
+  form.addEventListener('input', (e) => {                    // clear the red border as soon as the user fixes a field
+    if (e.target.classList) e.target.classList.remove('is-invalid');
+  });
+})();
